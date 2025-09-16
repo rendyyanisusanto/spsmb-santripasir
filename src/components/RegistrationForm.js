@@ -71,8 +71,7 @@ export default function RegistrationForm({ onSuccess }) {
         <div className={styles.greenPanel}>
           {/* Header - Always Visible */}
           <div className={styles.header}>
-            <h1 className={styles.mainTitle}>Seleksi Penerimaan Santri dan Murid Baru</h1>
-            <h2 className={styles.subtitle}>Asy-Syadzili</h2>
+            <h1 className={styles.mainTitle}>Seleksi Penerimaan Santri dan Murid Baru (SPSMB) Asy-Syadzili</h1>
             <div className={styles.logoContainer}>
               <Image 
                 src="/1.png" 

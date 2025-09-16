@@ -1,27 +1,62 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1A4D2E 0%, #2d6741 30%, #1A4D2E 70%, #0f3a1f 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animated background elements untuk konsistensi dengan form */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(245, 241, 227, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(245, 241, 227, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-20px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(20px) rotate(-1deg);
+  }
 }
 
 .receiptWrapper {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
 .receipt {
   max-width: 400px;
   width: 100%;
-  padding: 24px;
-  font-family: 'Courier New', monospace;
-  color: #2d3748;
-  line-height: 1.4;
+  padding: 30px;
+  font-family: 'Poppins', sans-serif;
+  color: #1A4D2E;
+  line-height: 1.6;
 }
 
 .header {
@@ -30,22 +65,26 @@
 }
 
 .title {
-  font-size: 1.2rem;
-  font-weight: bold;
+  font-size: 1.3rem;
+  font-weight: 700;
   margin: 0;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  color: #1A4D2E;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .subtitle {
-  font-size: 1rem;
-  font-weight: bold;
+  font-size: 1.1rem;
+  font-weight: 600;
   margin: 0;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  color: #2d6741;
 }
 
 .divider {
-  border-bottom: 2px dashed #4a5568;
-  margin: 12px 0;
+  border-bottom: 3px solid #1A4D2E;
+  margin: 16px 0;
+  opacity: 0.7;
 }
 
 .content {
@@ -54,18 +93,23 @@
 
 .registrationId {
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
   margin-bottom: 20px;
-  padding: 8px;
-  background: #f7fafc;
-  border-radius: 4px;
+  padding: 12px;
+  background: linear-gradient(135deg, #1A4D2E 0%, #2d6741 100%);
+  color: white;
+  border-radius: 10px;
+  letter-spacing: 1px;
 }
 
 .sectionTitle {
-  font-size: 1rem;
-  font-weight: bold;
-  margin: 16px 0 12px 0;
-  text-decoration: underline;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 20px 0 16px 0;
+  color: #1A4D2E;
+  border-bottom: 2px solid #F5F1E3;
+  padding-bottom: 8px;
 }
 
 .dataRow {
@@ -76,28 +120,31 @@
 }
 
 .label {
-  font-weight: bold;
+  font-weight: 600;
   flex: 1;
+  color: #1A4D2E;
 }
 
 .value {
   flex: 1;
   text-align: right;
   word-break: break-word;
+  font-weight: 500;
 }
 
 .notice {
   margin-top: 24px;
-  padding: 16px;
-  background: #f7fafc;
-  border-radius: 6px;
-  border-left: 4px solid #667eea;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(26, 77, 46, 0.1) 0%, rgba(245, 241, 227, 0.3) 100%);
+  border-radius: 10px;
+  border-left: 4px solid #1A4D2E;
 }
 
 .noticeTitle {
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin: 0 0 8px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #1A4D2E;
 }
 
 .noticeList {
@@ -130,40 +177,47 @@
   gap: 16px;
   flex-wrap: wrap;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 
 .printButton,
 .newRegistrationButton {
-  padding: 12px 24px;
+  padding: 15px 30px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   min-width: 160px;
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .printButton {
-  background: #38a169;
-  color: white;
+  background: linear-gradient(135deg, #F5F1E3 0%, #e8e4d1 100%);
+  color: #1A4D2E;
+  box-shadow: 0 5px 15px rgba(245, 241, 227, 0.3);
 }
 
 .printButton:hover {
-  background: #2f855a;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(56, 161, 105, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(245, 241, 227, 0.4);
+  background: linear-gradient(135deg, #e8e4d1 0%, #F5F1E3 100%);
 }
 
 .newRegistrationButton {
-  background: #667eea;
+  background: linear-gradient(135deg, #1A4D2E 0%, #2d6741 100%);
   color: white;
+  box-shadow: 0 5px 15px rgba(26, 77, 46, 0.3);
 }
 
 .newRegistrationButton:hover {
-  background: #5a67d8;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(26, 77, 46, 0.4);
+  background: linear-gradient(135deg, #2d6741 0%, #1A4D2E 100%);
 }
 
 /* Print styles */

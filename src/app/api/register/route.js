@@ -41,6 +41,15 @@ export async function POST(request) {
     }
 
     // Simpan ke database
+    console.log('Attempting to save to database with data:', {
+      nama: nama.trim(),
+      jenis_kelamin,
+      no_hp: no_hp.trim(),
+      nama_wali: nama_wali.trim(),
+      alamat: alamat.trim(),
+      lembaga_pendidikan
+    })
+
     const { data, error } = await supabase
       .from('pendaftar')  // Ubah dari 'pendaftaran' ke 'pendaftar'
       .insert([
@@ -56,9 +65,18 @@ export async function POST(request) {
       .select()
 
     if (error) {
-      console.error('Supabase error:', error)
+      console.error('Supabase error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
       return Response.json(
-        { error: 'Gagal menyimpan data pendaftaran' },
+        { 
+          error: 'Gagal menyimpan data pendaftaran',
+          details: error.message,
+          supabaseError: error
+        },
         { status: 500 }
       )
     }
