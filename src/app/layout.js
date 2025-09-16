@@ -8,25 +8,27 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Pendaftaran Santri Baru Asy-Syadzili",
+  title: "SPSMB Asy-Syadzili - Seleksi Penerimaan Santri & Murid Baru",
   description:
-    "Daftar santri baru Pondok Pesantren Asy-Syadzili secara online. Mudah, aman, dan langsung terhubung dengan admin. Dapatkan informasi pendaftaran, syarat, dan proses seleksi terbaru.",
+    "Sistem Seleksi Penerimaan Santri dan Murid Baru (SPSMB) Pondok Pesantren Asy-Syadzili. Daftar pondok sekaligus sekolah (SD, SMP, SMA, SMK) secara online, mudah, aman, dan langsung terhubung dengan admin.",
   keywords: [
+    "SPSMB Asy-Syadzili",
+    "Seleksi Penerimaan Santri Baru",
+    "Seleksi Penerimaan Murid Baru",
     "PPDB Asy-Syadzili",
-    "Pendaftaran Santri Baru",
-    "Pesantren Asy-Syadzili",
+    "Pendaftaran Pondok Pesantren",
+    "Pendaftaran Sekolah Asy-Syadzili",
     "PPDB Online",
     "Santri Asy-Syadzili",
     "Pondok Pesantren",
-    "Pendaftaran Pesantren",
     "PPDB 2025"
   ],
   openGraph: {
-    title: "Pendaftaran Santri Baru Asy-Syadzili",
+    title: "SPSMB Asy-Syadzili - Seleksi Santri & Murid Baru",
     description:
-      "Daftar santri baru Pondok Pesantren Asy-Syadzili secara online. Mudah, aman, dan langsung terhubung dengan admin.",
+      "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Seleksi santri dan murid baru, proses mudah dan terintegrasi.",
     url: "https://spmb-santripasir.vercel.app/", // Ganti dengan domain Anda jika sudah custom
-    siteName: "PPDB Asy-Syadzili",
+    siteName: "SPSMB Asy-Syadzili",
     images: [
       {
         url: "/1.png", // Pastikan logo sudah di folder public
@@ -40,9 +42,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pendaftaran Santri Baru Asy-Syadzili",
+    title: "SPSMB Asy-Syadzili - Seleksi Santri & Murid Baru",
     description:
-      "Daftar santri baru Pondok Pesantren Asy-Syadzili secara online. Mudah, aman, dan langsung terhubung dengan admin.",
+      "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Seleksi santri dan murid baru, proses mudah dan terintegrasi.",
     images: ["/1.png"]
   }
 };
