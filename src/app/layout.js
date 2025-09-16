@@ -27,14 +27,14 @@ export const metadata = {
     title: "SPSMB Asy-Syadzili - Seleksi Santri & Murid Baru",
     description:
       "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Seleksi santri dan murid baru, proses mudah dan terintegrasi.",
-    url: "https://spmb-santripasir.vercel.app/", // Ganti dengan domain Anda jika sudah custom
+    url: "https://spsmb-santripasir.vercel.app/", // Ganti dengan domain Anda jika sudah custom
     siteName: "SPSMB Asy-Syadzili",
     images: [
       {
-        url: "/1.png", // Pastikan logo sudah di folder public
+        url: "/2.png", // Pastikan logo sudah di folder public
         width: 400,
         height: 400,
-        alt: "Logo Asy-Syadzili"
+        alt: "SPSMB Asy-Syadzili"
       }
     ],
     locale: "id_ID",
@@ -45,7 +45,7 @@ export const metadata = {
     title: "SPSMB Asy-Syadzili - Seleksi Santri & Murid Baru",
     description:
       "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Seleksi santri dan murid baru, proses mudah dan terintegrasi.",
-    images: ["/1.png"]
+    images: ["/2.png"]
   }
 };
 
