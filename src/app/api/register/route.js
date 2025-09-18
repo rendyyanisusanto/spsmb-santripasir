@@ -109,7 +109,13 @@ export async function POST(request) {
 
 async function sendWhatsAppNotification(registrationData) {
   const botEndpoint = process.env.WHATSAPP_BOT_ENDPOINT
-  const adminNumber = '085894632505' // Nomor admin
+  let adminNumber = '085894632505' // Default admin
+  // Tentukan adminNumber berdasarkan lembaga_pendidikan
+  if (registrationData.lembaga_pendidikan === 'SMP') {
+    adminNumber = '081345009686'
+  } else if (registrationData.lembaga_pendidikan === 'SMA') {
+    adminNumber = '085179711916'
+  }
   
   if (!botEndpoint) {
     console.warn('WhatsApp bot endpoint not configured')
