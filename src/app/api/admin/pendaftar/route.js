@@ -1,7 +1,99 @@
+import { authenticate, authorize, canAccessLembaga } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 
+// GET - List pendaftar berdasarkan role
+export async function GET(request) {
+  try {
+    // Authenticate user
+    const authResult = await authenticate(request)
+    if (authResult.error) {
+      return Response.json({ error: authResult.error }, { status: authResult.status })
+    }
+
+    // Authorize - semua role yang login bisa akses
+    const authzResult = await authorize(['superadmin', 'admin', 'lembaga'])(request, authResult.user)
+    if (authzResult.error) {
+      return Response.json({ error: authzResult.error }, { status: authzResult.status })
+    }
+
+    // Get query parameters for pagination and filtering
+    const url = new URL(request.url)
+    const page = parseInt(url.searchParams.get('page')) || 1
+    const limit = parseInt(url.searchParams.get('limit')) || 10
+    const lembaga = url.searchParams.get('lembaga')
+    const search = url.searchParams.get('search')
+
+    let query = supabase
+      .from('pendaftar')
+      .select('*', { count: 'exact' })
+
+    // Filter berdasarkan role
+    if (authResult.user.role === 'lembaga') {
+      // User lembaga hanya bisa lihat data lembaganya
+      query = query.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+    } else if (lembaga) {
+      // Superadmin dan admin bisa filter by lembaga
+      query = query.eq('lembaga_pendidikan', lembaga)
+    }
+
+    // Search by nama, no_hp, nama_wali, atau alamat
+    if (search) {
+      query = query.or(`nama.ilike.%${search}%,no_hp.ilike.%${search}%,nama_wali.ilike.%${search}%,alamat.ilike.%${search}%`)
+    }
+
+    // Pagination
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    
+    query = query
+      .order('created_at', { ascending: false })
+      .range(from, to)
+
+    const { data: pendaftar, error, count } = await query
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return Response.json(
+        { error: 'Gagal mengambil data pendaftar' },
+        { status: 500 }
+      )
+    }
+
+    return Response.json({
+      success: true,
+      data: pendaftar,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      }
+    })
+
+  } catch (error) {
+    console.error('Get pendaftar error:', error)
+    return Response.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    )
+  }
+}
+
+// POST - Create pendaftar (semua role bisa create, tapi lembaga hanya untuk lembaganya)
 export async function POST(request) {
   try {
+    // Authenticate user
+    const authResult = await authenticate(request)
+    if (authResult.error) {
+      return Response.json({ error: authResult.error }, { status: authResult.status })
+    }
+
+    // Authorize - semua role yang login bisa create
+    const authzResult = await authorize(['superadmin', 'admin', 'lembaga'])(request, authResult.user)
+    if (authzResult.error) {
+      return Response.json({ error: authzResult.error }, { status: authzResult.status })
+    }
+
     const body = await request.json()
     const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_pendidikan } = body
 
@@ -22,6 +114,14 @@ export async function POST(request) {
       )
     }
 
+    // Cek akses lembaga untuk role lembaga
+    if (!canAccessLembaga(authResult.user, lembaga_pendidikan)) {
+      return Response.json(
+        { error: 'Tidak memiliki akses untuk lembaga pendidikan ini' },
+        { status: 403 }
+      )
+    }
+
     // Validasi jenis kelamin
     const validJenisKelamin = ['Pria', 'Wanita']
     if (!validJenisKelamin.includes(jenis_kelamin)) {
@@ -31,7 +131,7 @@ export async function POST(request) {
       )
     }
 
-    // Validasi nomor HP (harus numerik dan minimal 10 digit)
+    // Validasi nomor HP
     const phoneRegex = /^[0-9]{10,15}$/
     if (!phoneRegex.test(no_hp.replace(/[^\d]/g, ''))) {
       return Response.json(
@@ -41,17 +141,8 @@ export async function POST(request) {
     }
 
     // Simpan ke database
-    console.log('Attempting to save to database with data:', {
-      nama: nama.trim(),
-      jenis_kelamin,
-      no_hp: no_hp.trim(),
-      nama_wali: nama_wali.trim(),
-      alamat: alamat.trim(),
-      lembaga_pendidikan
-    })
-
     const { data, error } = await supabase
-      .from('pendaftar')  // Ubah dari 'pendaftaran' ke 'pendaftar'
+      .from('pendaftar')
       .insert([
         {
           nama: nama.trim(),
@@ -60,47 +151,36 @@ export async function POST(request) {
           nama_wali: nama_wali.trim(),
           alamat: alamat.trim(),
           lembaga_pendidikan,
-          created_by: null // Public registration, no user context
+          created_by: authResult.user.id
         }
       ])
       .select()
 
     if (error) {
-      console.error('Supabase error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
+      console.error('Supabase error:', error)
       return Response.json(
-        { 
-          error: 'Gagal menyimpan data pendaftaran',
-          details: error.message,
-          supabaseError: error
-        },
+        { error: 'Gagal menyimpan data pendaftaran' },
         { status: 500 }
       )
     }
 
     const registrationData = data[0]
 
-    // Kirim notifikasi ke WhatsApp Bot
+    // Kirim notifikasi WhatsApp jika diperlukan (opsional)
     try {
       await sendWhatsAppNotification(registrationData)
     } catch (whatsappError) {
       console.error('WhatsApp notification error:', whatsappError)
-      // Jangan gagalkan pendaftaran jika WhatsApp gagal
-      // Log error untuk debugging tapi tetap lanjutkan proses
     }
 
     return Response.json({
       success: true,
       message: 'Pendaftaran berhasil',
       data: registrationData
-    })
+    }, { status: 201 })
 
   } catch (error) {
-    console.error('Registration error:', error)
+    console.error('Create pendaftar error:', error)
     return Response.json(
       { error: 'Terjadi kesalahan server' },
       { status: 500 }
@@ -108,9 +188,11 @@ export async function POST(request) {
   }
 }
 
+// Function untuk WhatsApp notification (ambil dari route register yang sudah ada)
 async function sendWhatsAppNotification(registrationData) {
   const botEndpoint = process.env.WHATSAPP_BOT_ENDPOINT
   let adminNumber = '085894632505' // Default admin
+  
   // Tentukan adminNumber berdasarkan lembaga_pendidikan
   if (registrationData.lembaga_pendidikan === 'SMP') {
     adminNumber = '081345009686'
@@ -124,7 +206,6 @@ async function sendWhatsAppNotification(registrationData) {
   }
 
   try {
-    // Pesan untuk pendaftar
     const messageForUser = `🎓 *PENDAFTARAN SANTRI BARU ASY-SYADZILI*
 
 Terima kasih telah mendaftar! Berikut data pendaftaran Anda:
@@ -146,7 +227,6 @@ Admin akan segera menghubungi Anda untuk informasi selanjutnya. 🙏
 
 _Pondok Pesantren Asy-Syadzili_`
 
-    // Pesan untuk admin
     const messageForAdmin = `🔔 *PENDAFTAR BARU - ASY-SYADZILI*
 
 Ada pendaftar santri baru yang masuk:
@@ -166,67 +246,39 @@ _ID Pendaftaran: ${String(registrationData.id).slice(0, 8).toUpperCase()}_
 
 _Sistem Pendaftaran Asy-Syadzili_`
 
-    // Format nomor HP
     const userFormattedPhone = formatNomorHP(registrationData.no_hp)
     const adminFormattedPhone = formatNomorHP(adminNumber)
 
     const fullEndpoint = `${botEndpoint.replace(/\/$/, '')}/send-message`
 
-    // Kirim pesan ke pendaftar
+    // Kirim ke pendaftar dan admin
     const userFormData = new URLSearchParams()
     userFormData.append('message', messageForUser)
     userFormData.append('number', userFormattedPhone)
 
-    console.log('Sending WhatsApp notification to user:', userFormattedPhone)
-
-    const userResponse = await fetch(fullEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: userFormData.toString(),
-      signal: AbortSignal.timeout(10000)
-    })
-
-    // Kirim pesan ke admin
     const adminFormData = new URLSearchParams()
     adminFormData.append('message', messageForAdmin)
     adminFormData.append('number', adminFormattedPhone)
 
-    console.log('Sending WhatsApp notification to admin:', adminFormattedPhone)
+    const [userResponse, adminResponse] = await Promise.all([
+      fetch(fullEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: userFormData.toString(),
+        signal: AbortSignal.timeout(10000)
+      }),
+      fetch(fullEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: adminFormData.toString(),
+        signal: AbortSignal.timeout(10000)
+      })
+    ])
 
-    const adminResponse = await fetch(fullEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: adminFormData.toString(),
-      signal: AbortSignal.timeout(10000)
-    })
-
-    // Cek respons
-    const results = {
+    return {
       user: { success: userResponse.ok },
       admin: { success: adminResponse.ok }
     }
-
-    if (userResponse.ok) {
-      const userResult = await userResponse.json()
-      results.user.data = userResult
-      console.log('WhatsApp notification sent to user successfully:', userResult)
-    } else {
-      console.error('Failed to send WhatsApp to user:', userResponse.status, userResponse.statusText)
-    }
-
-    if (adminResponse.ok) {
-      const adminResult = await adminResponse.json()
-      results.admin.data = adminResult
-      console.log('WhatsApp notification sent to admin successfully:', adminResult)
-    } else {
-      console.error('Failed to send WhatsApp to admin:', adminResponse.status, adminResponse.statusText)
-    }
-
-    return results
 
   } catch (error) {
     console.error('Failed to send WhatsApp notifications:', error.message)
@@ -234,19 +286,12 @@ _Sistem Pendaftaran Asy-Syadzili_`
   }
 }
 
-// Helper function untuk format nomor HP sesuai dengan CodeIgniter
 function formatNomorHP(nomor) {
-  // Hapus spasi atau tanda minus (-) yang mungkin dimasukkan oleh pengguna
   nomor = nomor.replace(/[\s\-\(\)]/g, '')
-
-  // Jika nomor diawali dengan "08", ubah menjadi "628"
   if (nomor.startsWith('08')) {
     nomor = '628' + nomor.substring(2)
-  }
-  // Jika nomor diawali dengan "+62", ubah menjadi "62"
-  else if (nomor.startsWith('+62')) {
+  } else if (nomor.startsWith('+62')) {
     nomor = '62' + nomor.substring(3)
   }
-
   return nomor
 }
