@@ -10,12 +10,6 @@ export async function GET(request) {
       return Response.json({ error: authResult.error }, { status: authResult.status })
     }
 
-    // Authorize - only superadmin
-    const authzResult = await authorize(['superadmin'])(request, authResult.user)
-    if (authzResult.error) {
-      return Response.json({ error: authzResult.error }, { status: authzResult.status })
-    }
-
     // Get query parameters for pagination and filtering
     const url = new URL(request.url)
     const page = parseInt(url.searchParams.get('page')) || 1
@@ -23,9 +17,35 @@ export async function GET(request) {
     const role = url.searchParams.get('role')
     const search = url.searchParams.get('search')
 
+    const user = authResult.user
+
     let query = supabase
       .from('users')
-      .select('id, username, email, full_name, role, lembaga_akses, is_active, created_at, last_login', { count: 'exact' })
+      .select(`
+        id, 
+        username, 
+        email, 
+        full_name, 
+        role, 
+        lembaga_id,
+        is_active, 
+        created_at, 
+        last_login,
+        lembaga:lembaga_id(id, nama)
+      `, { count: 'exact' })
+
+    // Authorization dan filtering berdasarkan role
+    if (user.role === 'superadmin') {
+      // Superadmin bisa melihat semua users
+    } else if (user.role === 'admin') {
+      // Admin bisa melihat users dengan role admin dan lembaga
+      query = query.in('role', ['admin', 'lembaga'])
+    } else if (user.role === 'lembaga') {
+      // Role lembaga hanya bisa melihat users dari lembaga yang sama
+      query = query.eq('lembaga_id', user.lembaga_id)
+    } else {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 })
+    }
 
     // Filter by role if specified
     if (role) {
@@ -91,7 +111,7 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { username, email, password, full_name, role, lembaga_akses } = body
+    const { username, email, password, full_name, role, lembaga_id, is_active = true } = body
 
     // Validasi input
     if (!username || !email || !password || !full_name || !role) {
@@ -110,15 +130,12 @@ export async function POST(request) {
       )
     }
 
-    // Validasi lembaga_akses untuk role lembaga
-    if (role === 'lembaga') {
-      const validLembaga = ['SD', 'SMP', 'SMA', 'SMK', 'Non Formal']
-      if (!lembaga_akses || !validLembaga.includes(lembaga_akses)) {
-        return Response.json(
-          { error: 'Lembaga akses harus diisi untuk role lembaga' },
-          { status: 400 }
-        )
-      }
+    // Validasi lembaga_id untuk role lembaga
+    if (role === 'lembaga' && !lembaga_id) {
+      return Response.json(
+        { error: 'Lembaga harus dipilih untuk role lembaga' },
+        { status: 400 }
+      )
     }
 
     // Hash password
@@ -134,10 +151,21 @@ export async function POST(request) {
           password_hash: hashedPassword,
           full_name: full_name.trim(),
           role,
-          lembaga_akses: role === 'lembaga' ? lembaga_akses : null
+          lembaga_id: role === 'lembaga' ? lembaga_id : null,
+          is_active
         }
       ])
-      .select('id, username, email, full_name, role, lembaga_akses, is_active, created_at')
+      .select(`
+        id, 
+        username, 
+        email, 
+        full_name, 
+        role, 
+        lembaga_id, 
+        is_active, 
+        created_at,
+        lembaga:lembaga_id(id, nama)
+      `)
 
     if (error) {
       console.error('Supabase error:', error)

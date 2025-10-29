@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import AdminLayout from '@/components/AdminLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import styles from './users.module.css'
 
 export default function UsersPage() {
   const { user } = useAuth()
@@ -107,6 +106,7 @@ export default function UsersPage() {
   }
 
   const getInitials = (name) => {
+    if (!name) return '?'
     return name
       .split(' ')
       .map(word => word[0])
@@ -116,16 +116,16 @@ export default function UsersPage() {
   }
 
   const getRoleBadgeClass = (role) => {
-    const classes = {
-      'superadmin': styles.roleSuperadmin,
-      'admin': styles.roleAdmin,
-      'lembaga': styles.roleLembaga
+    switch (role) {
+      case 'superadmin': return 'bg-danger'
+      case 'admin': return 'bg-primary'
+      case 'lembaga': return 'bg-success'
+      default: return 'bg-secondary'
     }
-    return classes[role] || styles.roleAdmin
   }
 
   const getStatusBadgeClass = (isActive) => {
-    return isActive ? styles.statusActive : styles.statusInactive
+    return isActive ? 'bg-success' : 'bg-danger'
   }
 
   const formatDate = (dateString) => {
@@ -160,191 +160,260 @@ export default function UsersPage() {
   return (
     <ProtectedRoute allowedRoles={['superadmin']}>
       <AdminLayout pageTitle="Management Users">
-        <div className={styles.usersPage}>
+        <div className="container-fluid">
           {/* Page Header */}
-          <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>Management Users</h1>
-            <Link href="/admin/users/create" className={styles.addUserBtn}>
-              ➕ Tambah User
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h1 className="h3 fw-bold text-dark mb-1">Management Users</h1>
+              <p className="text-muted mb-0">Kelola data users sistem</p>
+            </div>
+            <Link href="/admin/users/create" className="btn btn-primary">
+              <i className="bi bi-plus-circle me-2"></i>
+              Tambah User
             </Link>
           </div>
 
           {/* Filters */}
-          <div className={styles.filtersSection}>
-            <div className={styles.filtersGrid}>
-              <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>Cari User</label>
-                <input
-                  type="text"
-                  className={styles.filterInput}
-                  placeholder="Cari username, email, atau nama..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                />
-              </div>
-              <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>Role</label>
-                <select
-                  className={styles.filterSelect}
-                  value={filters.role}
-                  onChange={(e) => handleFilterChange('role', e.target.value)}
-                >
-                  <option value="">Semua Role</option>
-                  <option value="superadmin">Super Admin</option>
-                  <option value="admin">Admin</option>
-                  <option value="lembaga">Lembaga</option>
-                </select>
-              </div>
-              <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>Per Halaman</label>
-                <select
-                  className={styles.filterSelect}
-                  value={filters.limit}
-                  onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-              <div className={styles.filterGroup}>
-                <button
-                  onClick={clearFilters}
-                  className={styles.clearFiltersBtn}
-                >
-                  Reset Filter
-                </button>
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body">
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <label className="form-label text-muted fw-semibold">Cari User</label>
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-end-0">
+                      <i className="bi bi-search text-muted"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-start-0"
+                      placeholder="Cari username, email, atau nama..."
+                      value={filters.search}
+                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="col-md-2">
+                  <label className="form-label text-muted fw-semibold">Role</label>
+                  <select
+                    className="form-select"
+                    value={filters.role}
+                    onChange={(e) => handleFilterChange('role', e.target.value)}
+                  >
+                    <option value="">Semua Role</option>
+                    <option value="superadmin">Super Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="lembaga">Lembaga</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-2">
+                  <label className="form-label text-muted fw-semibold">Per Halaman</label>
+                  <select
+                    className="form-select"
+                    value={filters.limit}
+                    onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-2 d-flex align-items-end">
+                  <button
+                    onClick={clearFilters}
+                    className="btn btn-outline-secondary w-100"
+                  >
+                    <i className="bi bi-arrow-clockwise me-2"></i>
+                    Reset Filter
+                  </button>
+                </div>
+
+                <div className="col-md-2 d-flex align-items-end">
+                  <div className="text-muted small">
+                    <i className="bi bi-info-circle me-1"></i>
+                    Total: {pagination.total} users
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Users Table */}
-          <div className={styles.usersTableContainer}>
-            {loading ? (
-              <div className={styles.loadingState}>
-                <div className={styles.loadingSpinner}></div>
-                <p>Memuat data users...</p>
-              </div>
-            ) : error ? (
-              <div className={styles.errorState}>
-                <p>❌ {error}</p>
-                <button onClick={fetchUsers} style={{ marginTop: '16px', padding: '8px 16px' }}>
-                  Coba Lagi
-                </button>
-              </div>
-            ) : users.length === 0 ? (
-              <div className={styles.emptyState}>
-                <p>📭 Tidak ada data users ditemukan</p>
-                <Link href="/admin/users/create" style={{ marginTop: '16px' }}>
-                  Tambah User Pertama
-                </Link>
-              </div>
-            ) : (
-              <>
-                <table className={styles.usersTable}>
-                  <thead className={styles.tableHeader}>
-                    <tr>
-                      <th>User</th>
-                      <th>Role</th>
-                      <th>Lembaga</th>
-                      <th>Status</th>
-                      <th>Login Terakhir</th>
-                      <th>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((userData) => (
-                      <tr key={userData.id} className={styles.tableRow}>
-                        <td className={styles.tableCell}>
-                          <div className={styles.userInfo}>
-                            <div className={styles.userAvatar}>
-                              {getInitials(userData.full_name)}
-                            </div>
-                            <div className={styles.userDetails}>
-                              <h4>{userData.full_name}</h4>
-                              <p>@{userData.username} • {userData.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className={styles.tableCell}>
-                          <span className={`${styles.roleBadge} ${getRoleBadgeClass(userData.role)}`}>
-                            {userData.role}
-                          </span>
-                        </td>
-                        <td className={styles.tableCell}>
-                          {userData.lembaga_akses || '-'}
-                        </td>
-                        <td className={styles.tableCell}>
-                          <span className={`${styles.statusBadge} ${getStatusBadgeClass(userData.is_active)}`}>
-                            {userData.is_active ? 'Aktif' : 'Nonaktif'}
-                          </span>
-                        </td>
-                        <td className={styles.tableCell}>
-                          {formatDate(userData.last_login)}
-                        </td>
-                        <td className={styles.tableCell}>
-                          <div className={styles.actionsCell}>
-                            <Link
-                              href={`/admin/users/${userData.id}/edit`}
-                              className={`${styles.actionBtn} ${styles.editBtn}`}
-                              title="Edit User"
-                            >
-                              ✏️
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteUser(userData.id, userData.full_name)}
-                              className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                              title="Hapus User"
-                              disabled={userData.id === user?.id} // Tidak bisa hapus diri sendiri
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-bottom-0 py-3">
+              <h5 className="card-title mb-0 fw-bold">
+                <i className="bi bi-people me-2 text-primary"></i>
+                Data Users
+              </h5>
+            </div>
 
-                {/* Pagination */}
-                <div className={styles.pagination}>
-                  <div className={styles.paginationInfo}>
+            <div className="card-body p-0">
+              {loading ? (
+                <div className="d-flex align-items-center justify-content-center py-5">
+                  <div className="spinner-border text-primary me-3" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <span className="text-muted">Memuat data users...</span>
+                </div>
+              ) : error ? (
+                <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
+                  <i className="bi bi-exclamation-triangle text-danger fs-1 mb-3"></i>
+                  <h6 className="text-danger mb-3">{error}</h6>
+                  <button onClick={fetchUsers} className="btn btn-outline-primary">
+                    <i className="bi bi-arrow-clockwise me-2"></i>
+                    Coba Lagi
+                  </button>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
+                  <i className="bi bi-inbox fs-1 text-muted mb-3"></i>
+                  <h6 className="text-muted mb-3">Tidak ada data users ditemukan</h6>
+                  <Link href="/admin/users/create" className="btn btn-primary">
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Tambah User Pertama
+                  </Link>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
+                          User
+                        </th>
+                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
+                          Role
+                        </th>
+                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
+                          Lembaga
+                        </th>
+                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
+                          Status
+                        </th>
+                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
+                          Dibuat
+                        </th>
+                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td className="border-0 py-3">
+                            <div className="d-flex align-items-center">
+                              <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                   style={{ width: '40px', height: '40px' }}>
+                                <span className="text-white fw-bold" style={{ fontSize: '0.8rem' }}>
+                                  {getInitials(user.username)}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="fw-semibold text-dark">{user.username}</div>
+                                <div className="text-muted" style={{ fontSize: '0.85rem' }}>
+                                  {user.email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="border-0 py-3">
+                            <span className={`badge ${getRoleBadgeClass(user.role)}`}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="border-0 py-3 text-muted">
+                            {user.lembaga?.nama || '-'}
+                          </td>
+                          <td className="border-0 py-3">
+                            <span className={`badge ${getStatusBadgeClass(user.is_active)}`}>
+                              {user.is_active ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                          </td>
+                          <td className="border-0 py-3 text-muted">
+                            <i className="bi bi-calendar3 me-1"></i>
+                            {formatDate(user.created_at)}
+                          </td>
+                          <td className="border-0 py-3">
+                            <div className="btn-group" role="group">
+                              <Link
+                                href={`/admin/users/${user.id}/edit`}
+                                className="btn btn-outline-secondary btn-sm"
+                                title="Edit User"
+                              >
+                                <i className="bi bi-pencil"></i>
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteUser(user.id, user.username)}
+                                className="btn btn-outline-danger btn-sm"
+                                title="Hapus User"
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+          {/* Pagination */}
+          {users.length > 0 && (
+            <div className="card border-0 shadow-sm mt-4">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="text-muted small">
                     Menampilkan {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total} users
                   </div>
-                  <div className={styles.paginationControls}>
-                    <button
-                      className={styles.paginationBtn}
-                      onClick={() => handleFilterChange('page', pagination.page - 1)}
-                      disabled={pagination.page <= 1}
-                    >
-                      ← Prev
-                    </button>
-                    
-                    {generatePageNumbers().map(pageNum => (
-                      <button
-                        key={pageNum}
-                        className={`${styles.paginationBtn} ${pagination.page === pageNum ? styles.active : ''}`}
-                        onClick={() => handleFilterChange('page', pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    ))}
-                    
-                    <button
-                      className={styles.paginationBtn}
-                      onClick={() => handleFilterChange('page', pagination.page + 1)}
-                      disabled={pagination.page >= pagination.totalPages}
-                    >
-                      Next →
-                    </button>
-                  </div>
+                  
+                  <nav aria-label="Pagination">
+                    <ul className="pagination pagination-sm mb-0">
+                      <li className={`page-item ${pagination.page <= 1 ? 'disabled' : ''}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => handleFilterChange('page', pagination.page - 1)}
+                          disabled={pagination.page <= 1}
+                        >
+                          <i className="bi bi-chevron-left"></i>
+                        </button>
+                      </li>
+                      
+                      {generatePageNumbers().map(pageNum => (
+                        <li key={pageNum} className={`page-item ${pagination.page === pageNum ? 'active' : ''}`}>
+                          <button
+                            className="page-link"
+                            onClick={() => handleFilterChange('page', pageNum)}
+                          >
+                            {pageNum}
+                          </button>
+                        </li>
+                      ))}
+                      
+                      <li className={`page-item ${pagination.page >= pagination.totalPages ? 'disabled' : ''}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => handleFilterChange('page', pagination.page + 1)}
+                          disabled={pagination.page >= pagination.totalPages}
+                        >
+                          <i className="bi bi-chevron-right"></i>
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
+        </div>
         </div>
       </AdminLayout>
     </ProtectedRoute>
+  
   )
 }

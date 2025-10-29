@@ -25,15 +25,18 @@ export async function GET(request) {
 
     let query = supabase
       .from('pendaftar')
-      .select('*', { count: 'exact' })
+      .select(`
+        *,
+        lembaga:lembaga_id(id, nama)
+      `, { count: 'exact' })
 
     // Filter berdasarkan role
     if (authResult.user.role === 'lembaga') {
-      // User lembaga hanya bisa lihat data lembaganya
-      query = query.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      // User lembaga hanya bisa lihat data pendaftar dari lembaganya
+      query = query.eq('lembaga_id', authResult.user.lembaga_id)
     } else if (lembaga) {
-      // Superadmin dan admin bisa filter by lembaga
-      query = query.eq('lembaga_pendidikan', lembaga)
+      // Superadmin dan admin bisa filter by lembaga_id
+      query = query.eq('lembaga_id', lembaga)
     }
 
     // Search by nama, no_hp, nama_wali, atau alamat

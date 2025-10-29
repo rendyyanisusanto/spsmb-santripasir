@@ -1,7 +1,7 @@
 import { authenticate, authorize, hashPassword } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 
-// GET - Get specific user (superadmin only)
+// GET - Get specific user
 export async function GET(request, { params }) {
   try {
     // Authenticate user
@@ -10,17 +10,23 @@ export async function GET(request, { params }) {
       return Response.json({ error: authResult.error }, { status: authResult.status })
     }
 
-    // Authorize - only superadmin
-    const authzResult = await authorize(['superadmin'])(request, authResult.user)
-    if (authzResult.error) {
-      return Response.json({ error: authzResult.error }, { status: authzResult.status })
-    }
-
+    const currentUser = authResult.user
     const userId = params.id
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, username, email, full_name, role, lembaga_akses, is_active, created_at, last_login')
+      .select(`
+        id, 
+        username, 
+        email, 
+        full_name, 
+        role, 
+        lembaga_id, 
+        is_active, 
+        created_at, 
+        last_login,
+        lembaga:lembaga_id(id, nama)
+      `)
       .eq('id', userId)
       .single()
 
@@ -29,6 +35,23 @@ export async function GET(request, { params }) {
         { error: 'User tidak ditemukan' },
         { status: 404 }
       )
+    }
+
+    // Authorization check
+    if (currentUser.role === 'superadmin') {
+      // Superadmin bisa akses semua users
+    } else if (currentUser.role === 'admin') {
+      // Admin bisa akses users dengan role admin dan lembaga
+      if (!['admin', 'lembaga'].includes(user.role)) {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+    } else if (currentUser.role === 'lembaga') {
+      // Role lembaga hanya bisa akses users dari lembaga yang sama
+      if (user.lembaga_id !== currentUser.lembaga_id) {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+    } else {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     return Response.json({
@@ -45,7 +68,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// PUT - Update user (superadmin only)
+// PUT - Update user
 export async function PUT(request, { params }) {
   try {
     // Authenticate user
@@ -54,15 +77,38 @@ export async function PUT(request, { params }) {
       return Response.json({ error: authResult.error }, { status: authResult.status })
     }
 
-    // Authorize - only superadmin
-    const authzResult = await authorize(['superadmin'])(request, authResult.user)
-    if (authzResult.error) {
-      return Response.json({ error: authzResult.error }, { status: authzResult.status })
-    }
-
+    const currentUser = authResult.user
     const userId = params.id
     const body = await request.json()
-    const { username, email, password, full_name, role, lembaga_akses, is_active } = body
+    const { username, email, password, full_name, role, lembaga_id, is_active } = body
+
+    // Authorization check - sama seperti GET
+    const { data: targetUser, error: getUserError } = await supabase
+      .from('users')
+      .select('id, role, lembaga_id')
+      .eq('id', userId)
+      .single()
+
+    if (getUserError || !targetUser) {
+      return Response.json({ error: 'User tidak ditemukan' }, { status: 404 })
+    }
+
+    // Check authorization
+    if (currentUser.role === 'superadmin') {
+      // Superadmin bisa update semua users
+    } else if (currentUser.role === 'admin') {
+      // Admin bisa update users dengan role admin dan lembaga
+      if (!['admin', 'lembaga'].includes(targetUser.role)) {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+    } else if (currentUser.role === 'lembaga') {
+      // Role lembaga hanya bisa update users dari lembaga yang sama
+      if (targetUser.lembaga_id !== currentUser.lembaga_id) {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+    } else {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 })
+    }
 
     // Validasi input
     if (!username || !email || !full_name || !role) {
@@ -81,15 +127,12 @@ export async function PUT(request, { params }) {
       )
     }
 
-    // Validasi lembaga_akses untuk role lembaga
-    if (role === 'lembaga') {
-      const validLembaga = ['SD', 'SMP', 'SMA', 'SMK', 'Non Formal']
-      if (!lembaga_akses || !validLembaga.includes(lembaga_akses)) {
-        return Response.json(
-          { error: 'Lembaga akses harus diisi untuk role lembaga' },
-          { status: 400 }
-        )
-      }
+    // Validasi lembaga_id untuk role lembaga
+    if (role === 'lembaga' && !lembaga_id) {
+      return Response.json(
+        { error: 'Lembaga harus dipilih untuk role lembaga' },
+        { status: 400 }
+      )
     }
 
     // Prepare update data
@@ -98,7 +141,7 @@ export async function PUT(request, { params }) {
       email: email.toLowerCase().trim(),
       full_name: full_name.trim(),
       role,
-      lembaga_akses: role === 'lembaga' ? lembaga_akses : null,
+      lembaga_id: role === 'lembaga' ? lembaga_id : null,
       is_active: is_active !== undefined ? is_active : true
     }
 
@@ -112,7 +155,18 @@ export async function PUT(request, { params }) {
       .from('users')
       .update(updateData)
       .eq('id', userId)
-      .select('id, username, email, full_name, role, lembaga_akses, is_active, created_at, last_login')
+      .select(`
+        id, 
+        username, 
+        email, 
+        full_name, 
+        role, 
+        lembaga_id, 
+        is_active, 
+        created_at, 
+        last_login,
+        lembaga:lembaga_id(id, nama)
+      `)
 
     if (error) {
       console.error('Supabase error:', error)

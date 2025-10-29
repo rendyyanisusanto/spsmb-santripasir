@@ -31,6 +31,12 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
       roles: ['superadmin', 'admin', 'lembaga']
     },
     {
+      icon: 'bi-person-badge',
+      label: 'Data Santri',
+      href: '/admin/santri',
+      roles: ['superadmin', 'admin', 'lembaga']
+    },
+    {
       icon: 'bi-bar-chart',
       label: 'Laporan',
       href: '/admin/reports',

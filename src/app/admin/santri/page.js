@@ -5,19 +5,17 @@ import { useAuth } from '@/contexts/AuthContext'
 import AdminLayout from '@/components/AdminLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
-export default function PendaftarPage() {
+export default function SantriPage() {
   const { user } = useAuth()
-  const router = useRouter()
-  const [pendaftar, setPendaftar] = useState([])
+  const [santri, setSantri] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [santriStatus, setSantriStatus] = useState({}) // Track santri status for each pendaftar
-  const [confirmingIds, setConfirmingIds] = useState(new Set()) // Track confirming process
+  const [updatingIds, setUpdatingIds] = useState(new Set())
   const [filters, setFilters] = useState({
     search: '',
     lembaga: '',
+    status: '',
     page: 1,
     limit: 10
   })
@@ -28,7 +26,7 @@ export default function PendaftarPage() {
     totalPages: 0
   })
 
-  const fetchPendaftar = useCallback(async () => {
+  const fetchSantri = useCallback(async () => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
@@ -38,7 +36,7 @@ export default function PendaftarPage() {
         if (value) searchParams.set(key, value)
       })
 
-      const response = await fetch(`/api/admin/pendaftar?${searchParams}`, {
+      const response = await fetch(`/api/admin/santri?${searchParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -46,54 +44,24 @@ export default function PendaftarPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPendaftar(data.data)
+        setSantri(data.data)
         setPagination(data.pagination)
         setError('')
-        
-        // Fetch santri status for each pendaftar
-        await fetchSantriStatus(data.data)
       } else {
         const errorData = await response.json()
-        setError(errorData.error || 'Gagal memuat data pendaftar')
+        setError(errorData.error || 'Gagal memuat data santri')
       }
     } catch (error) {
-      console.error('Failed to fetch pendaftar:', error)
+      console.error('Failed to fetch santri:', error)
       setError('Terjadi kesalahan sistem')
     } finally {
       setLoading(false)
     }
   }, [filters])
 
-  const fetchSantriStatus = async (pendaftarList) => {
-    const token = localStorage.getItem('token')
-    const statusPromises = pendaftarList.map(async (p) => {
-      try {
-        const response = await fetch(`/api/admin/pendaftar/${p.id}/santri-status`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        if (response.ok) {
-          const data = await response.json()
-          return { id: p.id, ...data.data }
-        }
-      } catch (error) {
-        console.error(`Failed to fetch santri status for ${p.id}:`, error)
-      }
-      return { id: p.id, isConfirmed: false, santri: null }
-    })
-
-    const statuses = await Promise.all(statusPromises)
-    const statusMap = {}
-    statuses.forEach(status => {
-      statusMap[status.id] = status
-    })
-    setSantriStatus(statusMap)
-  }
-
   useEffect(() => {
-    fetchPendaftar()
-  }, [fetchPendaftar])
+    fetchSantri()
+  }, [fetchSantri])
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -106,42 +74,54 @@ export default function PendaftarPage() {
   const clearFilters = () => {
     setFilters({
       search: '',
-      lembaga: user?.role === 'lembaga' ? user.lembaga_akses : '',
+      lembaga: user?.role === 'lembaga' ? user.lembaga_id : '',
+      status: '',
       page: 1,
       limit: 10
     })
   }
 
-  const handleDeletePendaftar = async (pendaftarId, pendaftarName) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus pendaftar "${pendaftarName}"?`)) {
+  const handleUpdateStatus = async (santriId, santriName, currentStatus) => {
+    const newStatus = !currentStatus
+    const statusText = newStatus ? 'aktif' : 'non-aktif'
+    
+    if (!confirm(`Apakah Anda yakin ingin mengubah status "${santriName}" menjadi ${statusText}?`)) {
       return
     }
 
     try {
+      setUpdatingIds(prev => new Set([...prev, santriId]))
       const token = localStorage.getItem('token')
-      const response = await fetch(`/api/admin/pendaftar/${pendaftarId}`, {
-        method: 'DELETE',
+      
+      const response = await fetch('/api/admin/santri', {
+        method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          santriId,
+          status_aktif: newStatus
+        })
       })
 
       if (response.ok) {
-        fetchPendaftar()
-        alert('Data pendaftar berhasil dihapus')
+        alert(`Status ${santriName} berhasil diubah menjadi ${statusText}`)
+        fetchSantri()
       } else {
         const errorData = await response.json()
-        alert(errorData.error || 'Gagal menghapus data pendaftar')
+        alert(errorData.error || 'Gagal mengubah status santri')
       }
     } catch (error) {
-      console.error('Failed to delete pendaftar:', error)
+      console.error('Failed to update santri status:', error)
       alert('Terjadi kesalahan sistem')
+    } finally {
+      setUpdatingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(santriId)
+        return newSet
+      })
     }
-  }
-
-  const handleConfirmSantri = async (pendaftarId, pendaftarName) => {
-    // Redirect ke halaman form konfirmasi
-    router.push(`/admin/pendaftar/${pendaftarId}/confirm-santri`)
   }
 
   const getInitials = (name) => {
@@ -169,18 +149,32 @@ export default function PendaftarPage() {
     return date.toLocaleDateString('id-ID', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     })
   }
 
-  const formatPhone = (phone) => {
-    // Format: 0812-3456-7890
-    if (phone.length >= 10) {
-      return phone.replace(/(\d{4})(\d{4})(\d+)/, '$1-$2-$3')
+  const formatBirthDate = (dateString) => {
+    if (!dateString) return 'Belum diisi'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return null
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
     }
-    return phone
+    
+    return age
   }
 
   const generatePageNumbers = () => {
@@ -202,118 +196,47 @@ export default function PendaftarPage() {
   // Available lembaga options based on user role
   const getLembagaOptions = () => {
     if (user?.role === 'lembaga') {
-      return [{ value: user.lembaga_akses, label: user.lembaga_akses }]
+      return [{ value: user.lembaga_id, label: user.lembaga_nama || 'Lembaga Saya' }]
     }
     return [
       { value: '', label: 'Semua Lembaga' },
-      { value: 'SD', label: 'SD' },
-      { value: 'SMP', label: 'SMP' },
-      { value: 'SMA', label: 'SMA' },
-      { value: 'SMK', label: 'SMK' },
-      { value: 'Non Formal', label: 'Non Formal' }
+      { value: '1', label: 'SD' },
+      { value: '2', label: 'SMP' },
+      { value: '3', label: 'SMA' },
+      { value: '4', label: 'SMK' },
+      { value: '5', label: 'Non Formal' }
     ]
   }
 
   // Set default lembaga filter for lembaga users
   useEffect(() => {
     if (user?.role === 'lembaga' && !filters.lembaga) {
-      setFilters(prev => ({ ...prev, lembaga: user.lembaga_akses }))
+      setFilters(prev => ({ ...prev, lembaga: user.lembaga_id }))
     }
   }, [user, filters.lembaga])
 
   return (
     <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
-      <AdminLayout pageTitle="Data Pendaftar">
+      <AdminLayout pageTitle="Data Santri">
         <div className="container-fluid">
           {/* Page Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <h1 className="h3 fw-bold text-dark mb-1">Data Pendaftar</h1>
-              <p className="text-muted mb-0">Kelola data pendaftar SPMB</p>
+              <h1 className="h3 fw-bold text-dark mb-1">Data Santri</h1>
+              <p className="text-muted mb-0">Kelola data santri yang telah dikonfirmasi</p>
             </div>
-            <div className="d-flex gap-2">
-              <Link href="/admin/santri" className="btn btn-outline-success">
-                <i className="bi bi-person-badge me-2"></i>
-                Lihat Data Santri
-              </Link>
-              <Link href="/admin/pendaftar/create" className="btn btn-primary">
-                <i className="bi bi-plus-circle me-2"></i>
-                Tambah Pendaftar
-              </Link>
-            </div>
-          </div>
-
-          {/* Statistics Cards */}
-          <div className="row mb-4">
-            <div className="col-md-3">
-              <div className="card border-0 shadow-sm bg-primary text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h6 className="card-title opacity-75">Total Pendaftar</h6>
-                      <h2 className="mb-0">{pagination.total}</h2>
-                    </div>
-                    <i className="bi bi-people fs-1 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card border-0 shadow-sm bg-success text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h6 className="card-title opacity-75">Sudah Santri</h6>
-                      <h2 className="mb-0">
-                        {Object.values(santriStatus).filter(s => s.isConfirmed).length}
-                      </h2>
-                    </div>
-                    <i className="bi bi-person-check fs-1 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card border-0 shadow-sm bg-warning text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h6 className="card-title opacity-75">Menunggu Konfirmasi</h6>
-                      <h2 className="mb-0">
-                        {Object.values(santriStatus).filter(s => !s.isConfirmed).length}
-                      </h2>
-                    </div>
-                    <i className="bi bi-clock fs-1 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card border-0 shadow-sm bg-info text-white">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h6 className="card-title opacity-75">Tingkat Konfirmasi</h6>
-                      <h2 className="mb-0">
-                        {pagination.total > 0 
-                          ? Math.round((Object.values(santriStatus).filter(s => s.isConfirmed).length / pagination.total) * 100)
-                          : 0
-                        }%
-                      </h2>
-                    </div>
-                    <i className="bi bi-graph-up fs-1 opacity-50"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Link href="/admin/pendaftar" className="btn btn-outline-primary">
+              <i className="bi bi-arrow-left me-2"></i>
+              Kembali ke Pendaftar
+            </Link>
           </div>
 
           {/* Filters */}
           <div className="card border-0 shadow-sm mb-4">
             <div className="card-body">
               <div className="row g-3">
-                <div className="col-md-4">
-                  <label className="form-label text-muted fw-semibold">Cari Pendaftar</label>
+                <div className="col-md-3">
+                  <label className="form-label text-muted fw-semibold">Cari Santri</label>
                   <div className="input-group">
                     <span className="input-group-text bg-light border-end-0">
                       <i className="bi bi-search text-muted"></i>
@@ -321,7 +244,7 @@ export default function PendaftarPage() {
                     <input
                       type="text"
                       className="form-control border-start-0"
-                      placeholder="Cari nama, no HP, wali, atau alamat..."
+                      placeholder="Cari nama, NIK, nomor KK, alamat..."
                       value={filters.search}
                       onChange={(e) => handleFilterChange('search', e.target.value)}
                     />
@@ -343,6 +266,19 @@ export default function PendaftarPage() {
                     ))}
                   </select>
                 </div>
+
+                <div className="col-md-2">
+                  <label className="form-label text-muted fw-semibold">Status</label>
+                  <select
+                    className="form-select"
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                  >
+                    <option value="">Semua Status</option>
+                    <option value="aktif">Aktif</option>
+                    <option value="nonaktif">Non-Aktif</option>
+                  </select>
+                </div>
                 
                 <div className="col-md-2">
                   <label className="form-label text-muted fw-semibold">Per Halaman</label>
@@ -358,32 +294,31 @@ export default function PendaftarPage() {
                   </select>
                 </div>
                 
-                <div className="col-md-2 d-flex align-items-end">
+                <div className="col-md-1 d-flex align-items-end">
                   <button
                     onClick={clearFilters}
                     className="btn btn-outline-secondary w-100"
                   >
-                    <i className="bi bi-arrow-clockwise me-2"></i>
-                    Reset Filter
+                    <i className="bi bi-arrow-clockwise"></i>
                   </button>
                 </div>
 
                 <div className="col-md-2 d-flex align-items-end">
                   <div className="text-muted small">
                     <i className="bi bi-info-circle me-1"></i>
-                    Total: {pagination.total} pendaftar
+                    Total: {pagination.total} santri
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Pendaftar Table */}
+          {/* Santri Table */}
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white border-bottom-0 py-3">
               <h5 className="card-title mb-0 fw-bold">
-                <i className="bi bi-people me-2 text-primary"></i>
-                Data Pendaftar
+                <i className="bi bi-person-badge me-2 text-primary"></i>
+                Data Santri
               </h5>
             </div>
 
@@ -393,24 +328,24 @@ export default function PendaftarPage() {
                   <div className="spinner-border text-primary me-3" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
-                  <span className="text-muted">Memuat data pendaftar...</span>
+                  <span className="text-muted">Memuat data santri...</span>
                 </div>
               ) : error ? (
                 <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
                   <i className="bi bi-exclamation-triangle text-danger fs-1 mb-3"></i>
                   <h6 className="text-danger mb-3">{error}</h6>
-                  <button onClick={fetchPendaftar} className="btn btn-outline-primary">
+                  <button onClick={fetchSantri} className="btn btn-outline-primary">
                     <i className="bi bi-arrow-clockwise me-2"></i>
                     Coba Lagi
                   </button>
                 </div>
-              ) : pendaftar.length === 0 ? (
+              ) : santri.length === 0 ? (
                 <div className="d-flex flex-column align-items-center justify-content-center py-5 text-center">
-                  <i className="bi bi-inbox fs-1 text-muted mb-3"></i>
-                  <h6 className="text-muted mb-3">Tidak ada data pendaftar ditemukan</h6>
-                  <Link href="/admin/pendaftar/create" className="btn btn-primary">
-                    <i className="bi bi-plus-circle me-2"></i>
-                    Tambah Pendaftar Pertama
+                  <i className="bi bi-person-badge fs-1 text-muted mb-3"></i>
+                  <h6 className="text-muted mb-3">Belum ada santri dikonfirmasi</h6>
+                  <Link href="/admin/pendaftar" className="btn btn-primary">
+                    <i className="bi bi-person-plus me-2"></i>
+                    Konfirmasi Pendaftar
                   </Link>
                 </div>
               ) : (
@@ -419,25 +354,22 @@ export default function PendaftarPage() {
                     <thead className="table-light">
                       <tr>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
-                          Pendaftar
+                          Santri
                         </th>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
                           Jenis Kelamin
                         </th>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
-                          No HP
+                          Umur
                         </th>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
-                          Wali
+                          NIK
                         </th>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
                           Lembaga
                         </th>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
-                          Status Santri
-                        </th>
-                        <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
-                          Tanggal Daftar
+                          Status
                         </th>
                         <th className="border-0 fw-semibold text-muted text-uppercase" style={{ fontSize: '0.75rem' }}>
                           Aksi
@@ -445,109 +377,99 @@ export default function PendaftarPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pendaftar.map((data) => (
+                      {santri.map((data) => (
                         <tr key={data.id}>
                           <td className="border-0 py-3">
                             <div className="d-flex align-items-center">
-                              <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                              <div className="bg-success rounded-circle d-flex align-items-center justify-content-center me-3"
                                    style={{ width: '40px', height: '40px' }}>
                                 <span className="text-white fw-bold" style={{ fontSize: '0.8rem' }}>
-                                  {getInitials(data.nama)}
+                                  {getInitials(data.nama_lengkap)}
                                 </span>
                               </div>
                               <div>
-                                <div className="fw-semibold text-dark">{data.nama}</div>
+                                <div className="fw-semibold text-dark">{data.nama_lengkap}</div>
                                 <div className="text-muted" style={{ fontSize: '0.85rem' }}>
-                                  {data.alamat.length > 30 ? data.alamat.substring(0, 30) + '...' : data.alamat}
+                                  {data.alamat ? (data.alamat.length > 30 ? data.alamat.substring(0, 30) + '...' : data.alamat) : 'Alamat belum diisi'}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="border-0 py-3">
                             <span className={`badge ${data.jenis_kelamin === 'Laki-laki' ? 'bg-info' : 'bg-warning'}`}>
-                              {data.jenis_kelamin}
+                              {data.jenis_kelamin || 'Belum diisi'}
                             </span>
                           </td>
                           <td className="border-0 py-3 text-muted">
-                            <i className="bi bi-telephone me-1"></i>
-                            {formatPhone(data.no_hp)}
-                          </td>
-                          <td className="border-0 py-3 text-muted">
-                            <i className="bi bi-person me-1"></i>
-                            {data.nama_wali}
-                          </td>
-                          <td className="border-0 py-3">
-                            <span className={`badge ${getLembagaBadgeClass(data.lembaga_pendidikan)}`}>
-                              {data.lembaga_pendidikan}
-                            </span>
-                          </td>
-                          <td className="border-0 py-3">
-                            {santriStatus[data.id]?.isConfirmed ? (
-                              <span className="badge bg-success">
-                                <i className="bi bi-check-circle me-1"></i>
-                                Sudah Santri
+                            {data.tanggal_lahir ? (
+                              <span>
+                                <i className="bi bi-calendar me-1"></i>
+                                {calculateAge(data.tanggal_lahir)} tahun
                               </span>
                             ) : (
-                              <span className="badge bg-secondary">
-                                <i className="bi bi-clock me-1"></i>
-                                Pendaftar
-                              </span>
+                              <span className="text-muted">Belum diisi</span>
                             )}
                           </td>
                           <td className="border-0 py-3 text-muted">
-                            <i className="bi bi-calendar3 me-1"></i>
-                            {formatDate(data.created_at)}
+                            <i className="bi bi-credit-card me-1"></i>
+                            {data.nik || 'Belum diisi'}
+                          </td>
+                          <td className="border-0 py-3">
+                            <span className={`badge ${getLembagaBadgeClass(data.lembaga?.nama)}`}>
+                              {data.lembaga?.nama || 'Belum diisi'}
+                            </span>
+                          </td>
+                          <td className="border-0 py-3">
+                            <span className={`badge ${data.status_aktif ? 'bg-success' : 'bg-danger'}`}>
+                              <i className={`bi ${data.status_aktif ? 'bi-check-circle' : 'bi-x-circle'} me-1`}></i>
+                              {data.status_aktif ? 'Aktif' : 'Non-Aktif'}
+                            </span>
                           </td>
                           <td className="border-0 py-3">
                             <div className="btn-group" role="group">
                               <Link
-                                href={`/admin/pendaftar/${data.id}`}
+                                href={`/admin/santri/${data.id}`}
                                 className="btn btn-outline-primary btn-sm"
                                 title="Lihat Detail"
                               >
                                 <i className="bi bi-eye"></i>
                               </Link>
                               
-                              {!santriStatus[data.id]?.isConfirmed && (
-                                <Link
-                                  href={`/admin/pendaftar/${data.id}/edit`}
-                                  className="btn btn-outline-secondary btn-sm"
-                                  title="Edit Pendaftar"
-                                >
-                                  <i className="bi bi-pencil"></i>
-                                </Link>
-                              )}
+                              <Link
+                                href={`/admin/santri/${data.id}/edit`}
+                                className="btn btn-outline-secondary btn-sm"
+                                title="Edit Santri"
+                              >
+                                <i className="bi bi-pencil"></i>
+                              </Link>
                               
-                              {/* Tombol Konfirmasi Santri - hanya untuk superadmin dan admin */}
-                              {(user?.role === 'superadmin' || user?.role === 'admin') && !santriStatus[data.id]?.isConfirmed && (
+                              {/* Tombol Update Status - hanya untuk superadmin dan admin */}
+                              {(user?.role === 'superadmin' || user?.role === 'admin') && (
                                 <button
-                                  onClick={() => handleConfirmSantri(data.id, data.nama)}
-                                  className="btn btn-outline-success btn-sm"
-                                  title="Konfirmasi menjadi Santri"
+                                  onClick={() => handleUpdateStatus(data.id, data.nama_lengkap, data.status_aktif)}
+                                  className={`btn btn-outline-${data.status_aktif ? 'warning' : 'success'} btn-sm`}
+                                  title={data.status_aktif ? 'Non-aktifkan' : 'Aktifkan'}
+                                  disabled={updatingIds.has(data.id)}
                                 >
-                                  <i className="bi bi-person-check"></i>
+                                  {updatingIds.has(data.id) ? (
+                                    <div className="spinner-border spinner-border-sm" role="status">
+                                      <span className="visually-hidden">Loading...</span>
+                                    </div>
+                                  ) : (
+                                    <i className={`bi ${data.status_aktif ? 'bi-pause' : 'bi-play'}`}></i>
+                                  )}
                                 </button>
                               )}
                               
-                              {/* Link ke halaman santri jika sudah dikonfirmasi */}
-                              {santriStatus[data.id]?.isConfirmed && (
+                              {/* Link ke data pendaftar asli */}
+                              {data.pendaftar && (
                                 <Link
-                                  href={`/admin/santri/${santriStatus[data.id].santri?.id}`}
+                                  href={`/admin/pendaftar/${data.pendaftar.id}`}
                                   className="btn btn-outline-info btn-sm"
-                                  title="Lihat Data Santri"
+                                  title="Lihat Data Pendaftar"
                                 >
-                                  <i className="bi bi-person-badge"></i>
+                                  <i className="bi bi-person"></i>
                                 </Link>
-                              )}
-                              
-                              {!santriStatus[data.id]?.isConfirmed && (
-                                <button
-                                  onClick={() => handleDeletePendaftar(data.id, data.nama)}
-                                  className="btn btn-outline-danger btn-sm"
-                                  title="Hapus Pendaftar"
-                                >
-                                  <i className="bi bi-trash"></i>
-                                </button>
                               )}
                             </div>
                           </td>
@@ -560,11 +482,11 @@ export default function PendaftarPage() {
             </div>
 
             {/* Pagination */}
-            {!loading && !error && pendaftar.length > 0 && (
+            {!loading && !error && santri.length > 0 && (
               <div className="card-footer bg-white border-top-0 py-3">
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="text-muted">
-                    Menampilkan {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total} pendaftar
+                    Menampilkan {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total} santri
                   </div>
                   
                   <nav aria-label="Pagination Navigation">
