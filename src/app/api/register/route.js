@@ -3,21 +3,12 @@ import { supabase } from '@/lib/supabase'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_pendidikan } = body
+    const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_id } = body
 
     // Validasi input
-    if (!nama || !jenis_kelamin || !no_hp || !nama_wali || !alamat || !lembaga_pendidikan) {
+    if (!nama || !jenis_kelamin || !no_hp || !nama_wali || !alamat || !lembaga_id) {
       return Response.json(
         { error: 'Semua field harus diisi' },
-        { status: 400 }
-      )
-    }
-
-    // Validasi lembaga pendidikan
-    const validLembaga = ['SD', 'SMP', 'SMA', 'SMK', 'Non Formal']
-    if (!validLembaga.includes(lembaga_pendidikan)) {
-      return Response.json(
-        { error: 'Lembaga pendidikan tidak valid' },
         { status: 400 }
       )
     }
@@ -40,6 +31,20 @@ export async function POST(request) {
       )
     }
 
+    // Validasi lembaga_id exists in database
+    const { data: lembaga, error: lembagaError } = await supabase
+      .from('lembaga')
+      .select('id, nama')
+      .eq('id', lembaga_id)
+      .single()
+
+    if (lembagaError || !lembaga) {
+      return Response.json(
+        { error: 'Lembaga pendidikan tidak valid' },
+        { status: 400 }
+      )
+    }
+
     // Simpan ke database
     console.log('Attempting to save to database with data:', {
       nama: nama.trim(),
@@ -47,11 +52,12 @@ export async function POST(request) {
       no_hp: no_hp.trim(),
       nama_wali: nama_wali.trim(),
       alamat: alamat.trim(),
-      lembaga_pendidikan
+      lembaga_id,
+      lembaga_pendidikan: lembaga.nama // Keep this for backward compatibility
     })
 
     const { data, error } = await supabase
-      .from('pendaftar')  // Ubah dari 'pendaftaran' ke 'pendaftar'
+      .from('pendaftar')
       .insert([
         {
           nama: nama.trim(),
@@ -59,7 +65,8 @@ export async function POST(request) {
           no_hp: no_hp.trim(),
           nama_wali: nama_wali.trim(),
           alamat: alamat.trim(),
-          lembaga_pendidikan,
+          lembaga_id: lembaga_id,
+          lembaga_pendidikan: lembaga.nama, // Store lembaga name for backward compatibility
           created_by: null // Public registration, no user context
         }
       ])

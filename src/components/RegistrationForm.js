@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import styles from './RegistrationForm.module.css'
 
@@ -12,10 +12,51 @@ export default function RegistrationForm({ onSuccess }) {
     no_hp: '',
     nama_wali: '',
     alamat: '',
-    lembaga_pendidikan: ''
+    lembaga_id: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [lembagaList, setLembagaList] = useState([])
+  const [loadingLembaga, setLoadingLembaga] = useState(true)
+
+  // Fetch lembaga data when component mounts
+  useEffect(() => {
+    fetchLembaga()
+  }, [])
+
+  const fetchLembaga = async () => {
+    try {
+      setLoadingLembaga(true)
+      const response = await fetch('/api/lembaga')
+      const result = await response.json()
+
+      if (response.ok) {
+        setLembagaList(result.data)
+      } else {
+        console.error('Failed to fetch lembaga:', result.error)
+        // Set default options if API fails
+        setLembagaList([
+          { id: 'default-sd', nama: 'SD (Sekolah Dasar)' },
+          { id: 'default-smp', nama: 'SMP (Sekolah Menengah Pertama)' },
+          { id: 'default-sma', nama: 'SMA (Sekolah Menengah Atas)' },
+          { id: 'default-smk', nama: 'SMK (Sekolah Menengah Kejuruan)' },
+          { id: 'default-nonformal', nama: 'Non Formal' }
+        ])
+      }
+    } catch (error) {
+      console.error('Error fetching lembaga:', error)
+      // Set default options if request fails
+      setLembagaList([
+        { id: 'default-sd', nama: 'SD (Sekolah Dasar)' },
+        { id: 'default-smp', nama: 'SMP (Sekolah Menengah Pertama)' },
+        { id: 'default-sma', nama: 'SMA (Sekolah Menengah Atas)' },
+        { id: 'default-smk', nama: 'SMK (Sekolah Menengah Kejuruan)' },
+        { id: 'default-nonformal', nama: 'Non Formal' }
+      ])
+    } finally {
+      setLoadingLembaga(false)
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -55,7 +96,7 @@ export default function RegistrationForm({ onSuccess }) {
         no_hp: '',
         nama_wali: '',
         alamat: '',
-        lembaga_pendidikan: ''
+        lembaga_id: ''
       })
 
     } catch (err) {
@@ -222,23 +263,26 @@ export default function RegistrationForm({ onSuccess }) {
                   </div>
 
                   <div className={styles.inputGroup}>
-                    <label htmlFor="lembaga_pendidikan" className={styles.label}>
-                      Jenjang Pendidikan
+                    <label htmlFor="lembaga_id" className={styles.label}>
+                      Lembaga Pendidikan
                     </label>
                     <select
-                      id="lembaga_pendidikan"
-                      name="lembaga_pendidikan"
-                      value={formData.lembaga_pendidikan}
+                      id="lembaga_id"
+                      name="lembaga_id"
+                      value={formData.lembaga_id}
                       onChange={handleChange}
                       required
                       className={styles.select}
+                      disabled={loadingLembaga}
                     >
-                      <option value="">Pilih jenjang pendidikan</option>
-                      <option value="SD">SD (Sekolah Dasar)</option>
-                      <option value="SMP">SMP (Sekolah Menengah Pertama)</option>
-                      <option value="SMA">SMA (Sekolah Menengah Atas)</option>
-                      <option value="SMK">SMK (Sekolah Menengah Kejuruan)</option>
-                      <option value="Non Formal">Non Formal</option>
+                      <option value="">
+                        {loadingLembaga ? 'Memuat lembaga...' : 'Pilih lembaga pendidikan'}
+                      </option>
+                      {lembagaList.map((lembaga) => (
+                        <option key={lembaga.id} value={lembaga.id}>
+                          {lembaga.nama}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

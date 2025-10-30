@@ -40,13 +40,13 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
       icon: 'bi-bar-chart',
       label: 'Laporan',
       href: '/admin/reports',
-      roles: ['superadmin', 'admin']
+      roles: ['superadmin', 'admin', 'lembaga']
     },
     {
       icon: 'bi-gear',
       label: 'Pengaturan',
       href: '/admin/settings',
-      roles: ['superadmin', 'admin']
+      roles: ['superadmin', 'admin', 'lembaga']
     }
   ]
 

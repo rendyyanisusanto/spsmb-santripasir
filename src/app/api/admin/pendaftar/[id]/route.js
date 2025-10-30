@@ -25,7 +25,9 @@ export async function GET(request, { params }) {
 
     // Filter berdasarkan role lembaga
     if (authResult.user.role === 'lembaga') {
-      query = query.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      // Gunakan lembaga_id yang sesuai dengan struktur database
+      const userLembagaId = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      query = query.eq('lembaga_id', userLembagaId)
     }
 
     const { data: pendaftar, error } = await query.single()
@@ -68,31 +70,39 @@ export async function PUT(request, { params }) {
 
     const pendaftarId = params.id
     const body = await request.json()
-    const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_pendidikan } = body
+    const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_id } = body
 
     // Validasi input
-    if (!nama || !jenis_kelamin || !no_hp || !nama_wali || !alamat || !lembaga_pendidikan) {
+    if (!nama || !jenis_kelamin || !no_hp || !nama_wali || !alamat || !lembaga_id) {
       return Response.json(
         { error: 'Semua field harus diisi' },
         { status: 400 }
       )
     }
 
-    // Validasi lembaga pendidikan
-    const validLembaga = ['SD', 'SMP', 'SMA', 'SMK', 'Non Formal']
-    if (!validLembaga.includes(lembaga_pendidikan)) {
+    // Validasi lembaga_id - pastikan lembaga exists
+    const { data: lembagaExists, error: lembagaError } = await supabase
+      .from('lembaga')
+      .select('id')
+      .eq('id', lembaga_id)
+      .single()
+
+    if (lembagaError || !lembagaExists) {
       return Response.json(
-        { error: 'Lembaga pendidikan tidak valid' },
+        { error: 'Lembaga tidak valid' },
         { status: 400 }
       )
     }
 
     // Cek akses lembaga untuk role lembaga
-    if (!canAccessLembaga(authResult.user, lembaga_pendidikan)) {
-      return Response.json(
-        { error: 'Tidak memiliki akses untuk lembaga pendidikan ini' },
-        { status: 403 }
-      )
+    if (authResult.user.role === 'lembaga') {
+      const userLembagaId = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      if (lembaga_id !== userLembagaId) {
+        return Response.json(
+          { error: 'Tidak memiliki akses untuk lembaga ini' },
+          { status: 403 }
+        )
+      }
     }
 
     // Validasi jenis kelamin
@@ -116,11 +126,12 @@ export async function PUT(request, { params }) {
     // Cek apakah data pendaftar ada dan user memiliki akses
     let checkQuery = supabase
       .from('pendaftar')
-      .select('lembaga_pendidikan')
+      .select('lembaga_id')
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      checkQuery = checkQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      const userLembagaId = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      checkQuery = checkQuery.eq('lembaga_id', userLembagaId)
     }
 
     const { data: existingData, error: checkError } = await checkQuery.single()
@@ -141,13 +152,14 @@ export async function PUT(request, { params }) {
         no_hp: no_hp.trim(),
         nama_wali: nama_wali.trim(),
         alamat: alamat.trim(),
-        lembaga_pendidikan,
+        lembaga_id,
         updated_by: authResult.user.id
       })
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      updateQuery = updateQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      const userLembagaId = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      updateQuery = updateQuery.eq('lembaga_id', userLembagaId)
     }
 
     const { data, error } = await updateQuery.select()
@@ -202,11 +214,12 @@ export async function DELETE(request, { params }) {
     // Cek apakah data pendaftar ada dan user memiliki akses
     let checkQuery = supabase
       .from('pendaftar')
-      .select('nama, lembaga_pendidikan')
+      .select('nama, lembaga_id')
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      checkQuery = checkQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      const userLembagaId = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      checkQuery = checkQuery.eq('lembaga_id', userLembagaId)
     }
 
     const { data: existingData, error: checkError } = await checkQuery.single()
@@ -225,7 +238,8 @@ export async function DELETE(request, { params }) {
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      deleteQuery = deleteQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      const userLembagaId = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      deleteQuery = deleteQuery.eq('lembaga_id', userLembagaId)
     }
 
     const { error } = await deleteQuery

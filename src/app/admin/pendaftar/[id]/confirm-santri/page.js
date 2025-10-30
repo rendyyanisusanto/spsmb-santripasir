@@ -42,7 +42,6 @@ export default function ConfirmSantriPage() {
     nik_ayah: '',
     tahun_lahir_ayah: '',
     pekerjaan_ayah: '',
-    pendidikan_ayah: '',
     nama_ibu: '',
     nik_ibu: '',
     tahun_lahir_ibu: '',
@@ -59,8 +58,7 @@ export default function ConfirmSantriPage() {
     alamat_pesantren: '',
 
     // Kesehatan
-    penyakit_kronis: ''
-  })
+    })
 
   const berkasList = [
     { key: 'kartu_keluarga', label: 'Kartu Keluarga', required: false },
@@ -75,9 +73,8 @@ export default function ConfirmSantriPage() {
     'SMP/Sederajat', 
     'SMA/Sederajat',
     'D1/D2/D3',
-    'S1/D4',
-    'S2',
-    'S3'
+  'S1/D4',
+  'S3'
   ]
 
   useEffect(() => {
@@ -266,7 +263,7 @@ export default function ConfirmSantriPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute allowedRoles={['superadmin', 'admin']}>
+      <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
         <AdminLayout pageTitle="Konfirmasi Santri">
           <div className="d-flex align-items-center justify-content-center" style={{ height: '50vh' }}>
             <div className="text-center">
@@ -283,7 +280,7 @@ export default function ConfirmSantriPage() {
 
   if (error) {
     return (
-      <ProtectedRoute allowedRoles={['superadmin', 'admin']}>
+      <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
         <AdminLayout pageTitle="Konfirmasi Santri">
           <div className="container-fluid">
             <div className="text-center py-5">
@@ -300,7 +297,7 @@ export default function ConfirmSantriPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={['superadmin', 'admin']}>
+    <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
       <AdminLayout pageTitle="Konfirmasi Santri">
         <div className="container-fluid">
           {/* Page Header */}

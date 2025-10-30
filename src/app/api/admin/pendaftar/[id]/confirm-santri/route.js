@@ -10,8 +10,8 @@ export async function POST(request, { params }) {
       return Response.json({ error: authResult.error }, { status: authResult.status })
     }
 
-    // Authorize - hanya superadmin dan admin yang bisa konfirmasi
-    const authzResult = await authorize(['superadmin', 'admin'])(request, authResult.user)
+    // Authorize - superadmin, admin, dan lembaga boleh konfirmasi (lembaga dibatasi ke lembaganya sendiri)
+    const authzResult = await authorize(['superadmin', 'admin', 'lembaga'])(request, authResult.user)
     if (authzResult.error) {
       return Response.json({ error: authzResult.error }, { status: authzResult.status })
     }
@@ -28,9 +28,18 @@ export async function POST(request, { params }) {
 
     if (pendaftarError || !pendaftar) {
       return Response.json(
-        { error: 'Data pendaftar tidak ditemukan' },
+        { error: 'Data pendaftar tidak ditemukan 123' },
         { status: 404 }
       )
+    }
+
+    // Jika user adalah lembaga, pastikan pendaftar berasal dari lembaga yang sama
+    if (authResult.user.role === 'lembaga') {
+      // depending on token payload the lembaga identifier may be in `lembaga_akses` or `lembaga_id`
+      const userLembaga = authResult.user.lembaga_id || authResult.user.lembaga_akses
+      if (!userLembaga || pendaftar.lembaga_id !== userLembaga) {
+        return Response.json({ error: 'Tidak memiliki akses untuk mengonfirmasi pendaftar ini' }, { status: 403 })
+      }
     }
 
     // Check if already confirmed as santri

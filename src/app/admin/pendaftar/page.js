@@ -508,18 +508,10 @@ export default function PendaftarPage() {
                                 <i className="bi bi-eye"></i>
                               </Link>
                               
-                              {!santriStatus[data.id]?.isConfirmed && (
-                                <Link
-                                  href={`/admin/pendaftar/${data.id}/edit`}
-                                  className="btn btn-outline-secondary btn-sm"
-                                  title="Edit Pendaftar"
-                                >
-                                  <i className="bi bi-pencil"></i>
-                                </Link>
-                              )}
+
                               
-                              {/* Tombol Konfirmasi Santri - hanya untuk superadmin dan admin */}
-                              {(user?.role === 'superadmin' || user?.role === 'admin') && !santriStatus[data.id]?.isConfirmed && (
+                              {/* Tombol Konfirmasi Santri - untuk superadmin, admin, dan lembaga */}
+                              {!santriStatus[data.id]?.isConfirmed && (
                                 <button
                                   onClick={() => handleConfirmSantri(data.id, data.nama)}
                                   className="btn btn-outline-success btn-sm"
