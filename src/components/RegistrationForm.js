@@ -12,6 +12,7 @@ export default function RegistrationForm({ onSuccess }) {
     no_hp: '',
     nama_wali: '',
     alamat: '',
+    sekolah_asal: '',
     lembaga_id: ''
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -96,6 +97,7 @@ export default function RegistrationForm({ onSuccess }) {
         no_hp: '',
         nama_wali: '',
         alamat: '',
+        sekolah_asal: '',
         lembaga_id: ''
       })
 
@@ -259,6 +261,21 @@ export default function RegistrationForm({ onSuccess }) {
                       className={styles.textarea}
                       placeholder="Alamat lengkap dengan RT/RW, Kelurahan, Kecamatan, Kota"
                       rows="3"
+                    />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="sekolah_asal" className={styles.label}>
+                      Sekolah Asal <span className={styles.highlight}>(opsional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="sekolah_asal"
+                      name="sekolah_asal"
+                      value={formData.sekolah_asal}
+                      onChange={handleChange}
+                      className={styles.input}
+                      placeholder="Nama sekolah asal (jika ada)"
                     />
                   </div>
 

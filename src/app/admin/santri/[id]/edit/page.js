@@ -6,24 +6,19 @@ import AdminLayout from '@/components/AdminLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { uploadFile, validateFile } from '@/lib/fileUpload'
-import { debugStorage } from '@/lib/storageDebug'
 
-export default function ConfirmSantriPage() {
+export default function EditSantriPage() {
   const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
-  const pendaftarId = params.id
+  const santriId = params.id
 
-  const [pendaftar, setPendaftar] = useState(null)
+  const [santri, setSantri] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [files, setFiles] = useState({})
-  const [uploadProgress, setUploadProgress] = useState({})
 
   const [formData, setFormData] = useState({
-    // Data dasar - akan diisi dari data pendaftar
     nama_lengkap: '',
     tempat_lahir: '',
     tanggal_lahir: '',
@@ -36,19 +31,16 @@ export default function ConfirmSantriPage() {
     kabupaten: '',
     provinsi: '',
     kode_pos: '',
-
-    // Data orang tua
     nama_ayah: '',
     nik_ayah: '',
     tahun_lahir_ayah: '',
     pekerjaan_ayah: '',
+    pendidikan_ayah: '',
     nama_ibu: '',
     nik_ibu: '',
     tahun_lahir_ibu: '',
     pekerjaan_ibu: '',
     pendidikan_ibu: '',
-
-    // Riwayat pendidikan
     nama_sekolah_asal: '',
     provinsi_sekolah_asal: '',
     kabupaten_sekolah_asal: '',
@@ -56,37 +48,30 @@ export default function ConfirmSantriPage() {
     tahun_lulus_sekolah_asal: '',
     asal_pesantren: '',
     alamat_pesantren: '',
-
-    // Kesehatan
-    })
-
-  const berkasList = [
-    { key: 'kartu_keluarga', label: 'Kartu Keluarga', required: false },
-    { key: 'akta_kelahiran', label: 'Akta Kelahiran', required: false },
-    { key: 'ijazah', label: 'Ijazah/SKHUN', required: false },
-    { key: 'foto', label: 'Foto 3x4', required: false },
-  ]
+    penyakit_kronis: ''
+  })
 
   const pendidikanOptions = [
     'Tidak Sekolah',
     'SD/Sederajat',
-    'SMP/Sederajat', 
+    'SMP/Sederajat',
     'SMA/Sederajat',
     'D1/D2/D3',
-  'S1/D4',
-  'S3'
+    'S1/D4',
+    'S2',
+    'S3'
   ]
 
   useEffect(() => {
-    fetchPendaftar()
-  }, [pendaftarId])
+    fetchSantri()
+  }, [santriId])
 
-  const fetchPendaftar = async () => {
+  const fetchSantri = async () => {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
-      
-      const response = await fetch(`/api/admin/pendaftar/${pendaftarId}`, {
+
+      const response = await fetch(`/api/admin/santri/${santriId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -94,26 +79,49 @@ export default function ConfirmSantriPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPendaftar(data.data)
+        setSantri(data.data)
         
-        // Isi form dengan data pendaftar yang ada
-        setFormData(prev => ({
-          ...prev,
-          nama_lengkap: data.data.nama || '',
-          jenis_kelamin: data.data.jenis_kelamin || '',
-          alamat: data.data.alamat || '',
+        // Isi form dengan data santri yang ada
+        setFormData({
+          nama_lengkap: data.data.nama_lengkap || '',
           tempat_lahir: data.data.tempat_lahir || '',
           tanggal_lahir: data.data.tanggal_lahir ? data.data.tanggal_lahir.split('T')[0] : '',
-          nama_sekolah_asal: data.data.sekolah_asal || ''
-        }))
+          jenis_kelamin: data.data.jenis_kelamin || '',
+          nomor_kk: data.data.nomor_kk || '',
+          nik: data.data.nik || '',
+          alamat: data.data.alamat || '',
+          desa: data.data.desa || '',
+          kecamatan: data.data.kecamatan || '',
+          kabupaten: data.data.kabupaten || '',
+          provinsi: data.data.provinsi || '',
+          kode_pos: data.data.kode_pos || '',
+          nama_ayah: data.data.nama_ayah || '',
+          nik_ayah: data.data.nik_ayah || '',
+          tahun_lahir_ayah: data.data.tahun_lahir_ayah || '',
+          pekerjaan_ayah: data.data.pekerjaan_ayah || '',
+          pendidikan_ayah: data.data.pendidikan_ayah || '',
+          nama_ibu: data.data.nama_ibu || '',
+          nik_ibu: data.data.nik_ibu || '',
+          tahun_lahir_ibu: data.data.tahun_lahir_ibu || '',
+          pekerjaan_ibu: data.data.pekerjaan_ibu || '',
+          pendidikan_ibu: data.data.pendidikan_ibu || '',
+          nama_sekolah_asal: data.data.nama_sekolah_asal || '',
+          provinsi_sekolah_asal: data.data.provinsi_sekolah_asal || '',
+          kabupaten_sekolah_asal: data.data.kabupaten_sekolah_asal || '',
+          kecamatan_sekolah_asal: data.data.kecamatan_sekolah_asal || '',
+          tahun_lulus_sekolah_asal: data.data.tahun_lulus_sekolah_asal || '',
+          asal_pesantren: data.data.asal_pesantren || '',
+          alamat_pesantren: data.data.alamat_pesantren || '',
+          penyakit_kronis: data.data.penyakit_kronis || ''
+        })
         
         setError('')
       } else {
         const errorData = await response.json()
-        setError(errorData.error || 'Gagal memuat data pendaftar')
+        setError(errorData.error || 'Gagal memuat data santri')
       }
     } catch (error) {
-      console.error('Failed to fetch pendaftar:', error)
+      console.error('Failed to fetch santri:', error)
       setError('Terjadi kesalahan sistem')
     } finally {
       setLoading(false)
@@ -128,146 +136,36 @@ export default function ConfirmSantriPage() {
     }))
   }
 
-  const fillSMPITAsySyadzili = () => {
-    setFormData(prev => ({
-      ...prev,
-      nama_sekolah_asal: 'SMP IT Asy-Syadzili',
-      provinsi_sekolah_asal: 'Jawa Timur',
-      kabupaten_sekolah_asal: 'Malang',
-      kecamatan_sekolah_asal: 'Pakis',
-      asal_pesantren: 'PPSQ Asy-Syadzili',
-      alamat_pesantren: 'Jl. Sumber Pasir No.99A, Krajan, Sumberpasir, Kec. Pakis, Kabupaten Malang, Jawa Timur 65154'
-    }))
-  }
-
-  const handleFileChange = (berkasKey, file) => {
-    if (!file) return
-
-    // Validate file
-    const validation = validateFile(file)
-    if (!validation.valid) {
-      alert(validation.error)
-      return
-    }
-
-    setFiles(prev => ({
-      ...prev,
-      [berkasKey]: file
-    }))
-  }
-
-  const uploadFileWithProgress = async (file, berkasKey) => {
-    try {
-      setUploadProgress(prev => ({ ...prev, [berkasKey]: 10 }))
-      
-      const result = await uploadFile(file, 'santri')
-      
-      setUploadProgress(prev => ({ ...prev, [berkasKey]: 100 }))
-      
-      if (result.success) {
-        return result.url
-      } else {
-        // If upload fails, run debug to help identify the issue
-        console.error('Upload failed, running storage debug...')
-        const debugResult = await debugStorage()
-        console.log('Storage debug result:', debugResult)
-        
-        throw new Error(result.error + (debugResult.error ? ' (Debug: ' + debugResult.error + ')' : ''))
-      }
-    } catch (error) {
-      console.error('Upload error:', error)
-      setUploadProgress(prev => ({ ...prev, [berkasKey]: 0 }))
-      throw error
-    }
-  }
-
-  const validateForm = () => {
-    const requiredFields = [
-      'nama_lengkap', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin',
-      'nomor_kk', 'nik', 'alamat', 'desa', 'kecamatan', 'kabupaten', 'provinsi',
-      'nama_ayah', 'nama_ibu'
-    ]
-
-    for (const field of requiredFields) {
-      if (!formData[field]) {
-        return `Field ${field.replace('_', ' ')} harus diisi`
-      }
-    }
-
-    // Validasi berkas wajib - dibuat optional untuk sementara
-    // const requiredBerkas = berkasList.filter(b => b.required)
-    // for (const berkas of requiredBerkas) {
-    //   if (!files[berkas.key]) {
-    //     return `Berkas ${berkas.label} harus diupload`
-    //   }
-    // }
-
-    return null
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    const validation = validateForm()
-    if (validation) {
-      alert(validation)
+    if (!formData.nama_lengkap || !formData.jenis_kelamin || !formData.tempat_lahir || !formData.tanggal_lahir) {
+      alert('Mohon isi semua field yang wajib')
       return
     }
 
     try {
       setSubmitting(true)
-      
-      // Upload semua berkas terlebih dahulu
-      const uploadedFiles = {}
-      const uploadErrors = []
-      
-      for (const [berkasKey, file] of Object.entries(files)) {
-        if (file) {
-          try {
-            const fileUrl = await uploadFileWithProgress(file, berkasKey)
-            uploadedFiles[berkasKey] = fileUrl
-          } catch (uploadError) {
-            console.error(`Failed to upload ${berkasKey}:`, uploadError)
-            uploadErrors.push(`${berkasKey}: ${uploadError.message}`)
-            // Continue with other uploads even if one fails
-          }
-        }
-      }
-
-      // Show upload errors but continue with submission
-      if (uploadErrors.length > 0) {
-        const continueAnyway = confirm(
-          `Beberapa berkas gagal diupload:\n${uploadErrors.join('\n')}\n\nLanjutkan tanpa berkas ini? Berkas bisa diupload nanti.`
-        )
-        if (!continueAnyway) {
-          return
-        }
-      }
-
-      // Submit data santri
       const token = localStorage.getItem('token')
-      const response = await fetch(`/api/admin/pendaftar/${pendaftarId}/confirm-santri`, {
-        method: 'POST',
+      
+      const response = await fetch(`/api/admin/santri/${santriId}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          santri_data: formData,
-          berkas_data: uploadedFiles
-        })
+        body: JSON.stringify(formData)
       })
 
       if (response.ok) {
-        const data = await response.json()
-        alert('Data santri berhasil disimpan!')
-        router.push('/admin/pendaftar')
+        alert('Data santri berhasil diupdate!')
+        router.push('/admin/santri')
       } else {
         const errorData = await response.json()
-        setError(errorData.error || 'Gagal menyimpan data santri')
+        setError(errorData.error || 'Gagal mengupdate data santri')
       }
     } catch (error) {
-      console.error('Failed to submit santri data:', error)
+      console.error('Failed to update santri:', error)
       setError('Terjadi kesalahan sistem')
     } finally {
       setSubmitting(false)
@@ -277,13 +175,13 @@ export default function ConfirmSantriPage() {
   if (loading) {
     return (
       <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
-        <AdminLayout pageTitle="Konfirmasi Santri">
+        <AdminLayout pageTitle="Edit Santri">
           <div className="d-flex align-items-center justify-content-center" style={{ height: '50vh' }}>
             <div className="text-center">
               <div className="spinner-border text-primary mb-3" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="text-muted">Memuat data pendaftar...</p>
+              <p className="text-muted">Memuat data santri...</p>
             </div>
           </div>
         </AdminLayout>
@@ -291,16 +189,16 @@ export default function ConfirmSantriPage() {
     )
   }
 
-  if (error) {
+  if (error && !santri) {
     return (
       <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
-        <AdminLayout pageTitle="Konfirmasi Santri">
+        <AdminLayout pageTitle="Edit Santri">
           <div className="container-fluid">
             <div className="text-center py-5">
               <i className="bi bi-exclamation-triangle text-danger fs-1 mb-3"></i>
               <h4 className="text-danger mb-3">{error}</h4>
-              <Link href="/admin/pendaftar" className="btn btn-primary">
-                Kembali ke Daftar Pendaftar
+              <Link href="/admin/santri" className="btn btn-primary">
+                Kembali ke Daftar Santri
               </Link>
             </div>
           </div>
@@ -311,45 +209,27 @@ export default function ConfirmSantriPage() {
 
   return (
     <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
-      <AdminLayout pageTitle="Konfirmasi Santri">
+      <AdminLayout pageTitle="Edit Santri">
         <div className="container-fluid">
           {/* Page Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <p className="text-muted mb-0">Lengkapi data untuk mengkonfirmasi {pendaftar?.nama} menjadi santri</p>
+              <h1 className="h3 fw-bold text-dark mb-1">Edit Data Santri</h1>
+              <p className="text-muted mb-0">Ubah informasi santri {santri?.nama_lengkap}</p>
             </div>
-            <Link href="/admin/pendaftar" className="btn btn-outline-secondary">
+            <Link href="/admin/santri" className="btn btn-outline-secondary">
               <i className="bi bi-arrow-left me-2"></i>
               Kembali
             </Link>
           </div>
 
-          {/* Pendaftar Info */}
-          <div className="card border-0 shadow-sm mb-4">
-            <div className="card-body">
-              <h6 className="card-title fw-bold mb-3">
-                <i className="bi bi-person-circle me-2 text-primary"></i>
-                Informasi Pendaftar
-              </h6>
-              <div className="row">
-                <div className="col-md-3">
-                  <strong>Nama:</strong> {pendaftar?.nama}
-                </div>
-                <div className="col-md-3">
-                  <strong>No HP:</strong> {pendaftar?.no_hp}
-                </div>
-                <div className="col-md-3">
-                  <strong>Lembaga:</strong> {pendaftar?.lembaga_pendidikan}
-                </div>
-                <div className="col-md-3">
-                  <strong>Sekolah Asal:</strong> {pendaftar?.sekolah_asal || '-'}
-                </div>
-                <div className="col-md-3">
-                  <strong>Tanggal Daftar:</strong> {new Date(pendaftar?.created_at).toLocaleDateString('id-ID')}
-                </div>
-              </div>
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              <i className="bi bi-exclamation-triangle me-2"></i>
+              {error}
+              <button type="button" className="btn-close" onClick={() => setError('')}></button>
             </div>
-          </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="row">
@@ -424,7 +304,6 @@ export default function ConfirmSantriPage() {
                           value={formData.nik}
                           onChange={handleInputChange}
                           maxLength="16"
-                          
                         />
                       </div>
                       
@@ -437,67 +316,61 @@ export default function ConfirmSantriPage() {
                           value={formData.nomor_kk}
                           onChange={handleInputChange}
                           maxLength="16"
-                          
                         />
                       </div>
                       
                       <div className="col-12">
-                        <label className="form-label fw-semibold">Alamat Lengkap </label>
+                        <label className="form-label fw-semibold">Alamat Lengkap</label>
                         <textarea
                           className="form-control"
                           name="alamat"
                           value={formData.alamat}
                           onChange={handleInputChange}
                           rows="3"
-                          
                         />
                       </div>
                       
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">Desa </label>
+                        <label className="form-label fw-semibold">Desa</label>
                         <input
                           type="text"
                           className="form-control"
                           name="desa"
                           value={formData.desa}
                           onChange={handleInputChange}
-                          
                         />
                       </div>
                       
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">Kecamatan </label>
+                        <label className="form-label fw-semibold">Kecamatan</label>
                         <input
                           type="text"
                           className="form-control"
                           name="kecamatan"
                           value={formData.kecamatan}
                           onChange={handleInputChange}
-                          
                         />
                       </div>
                       
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">Kabupaten </label>
+                        <label className="form-label fw-semibold">Kabupaten</label>
                         <input
                           type="text"
                           className="form-control"
                           name="kabupaten"
                           value={formData.kabupaten}
                           onChange={handleInputChange}
-                          
                         />
                       </div>
                       
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">Provinsi </label>
+                        <label className="form-label fw-semibold">Provinsi</label>
                         <input
                           type="text"
                           className="form-control"
                           name="provinsi"
                           value={formData.provinsi}
                           onChange={handleInputChange}
-                          
                         />
                       </div>
                       
@@ -531,14 +404,13 @@ export default function ConfirmSantriPage() {
                       </div>
                       
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">Nama Ayah *</label>
+                        <label className="form-label fw-semibold">Nama Ayah</label>
                         <input
                           type="text"
                           className="form-control"
                           name="nama_ayah"
                           value={formData.nama_ayah}
                           onChange={handleInputChange}
-                          required
                         />
                       </div>
                       
@@ -598,14 +470,13 @@ export default function ConfirmSantriPage() {
                       </div>
                       
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">Nama Ibu *</label>
+                        <label className="form-label fw-semibold">Nama Ibu</label>
                         <input
                           type="text"
                           className="form-control"
                           name="nama_ibu"
                           value={formData.nama_ibu}
                           onChange={handleInputChange}
-                          required
                         />
                       </div>
                       
@@ -677,24 +548,13 @@ export default function ConfirmSantriPage() {
                     <div className="row g-3">
                       <div className="col-12">
                         <label className="form-label fw-semibold">Nama Sekolah Asal</label>
-                        <div className="input-group">
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="nama_sekolah_asal"
-                            value={formData.nama_sekolah_asal}
-                            onChange={handleInputChange}
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-outline-primary"
-                            onClick={fillSMPITAsySyadzili}
-                            title="Isi otomatis dengan data SMP IT Asy-Syadzili"
-                          >
-                            <i className="bi bi-lightning-charge me-1"></i>
-                            SMP IT Asy-Syadzili
-                          </button>
-                        </div>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="nama_sekolah_asal"
+                          value={formData.nama_sekolah_asal}
+                          onChange={handleInputChange}
+                        />
                       </div>
                       
                       <div className="col-md-6">
@@ -792,42 +652,6 @@ export default function ConfirmSantriPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Upload Berkas */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-header bg-secondary text-white">
-                    <h6 className="card-title mb-0 fw-bold">
-                      <i className="bi bi-file-earmark-arrow-up me-2"></i>
-                      Upload Berkas
-                    </h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="row g-3">
-                      {berkasList.map(berkas => (
-                        <div key={berkas.key} className="col-12">
-                          <label className="form-label fw-semibold">
-                            {berkas.label} {berkas.required && <span className="text-danger">*</span>}
-                          </label>
-                          <input
-                            type="file"
-                            className="form-control"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(e) => handleFileChange(berkas.key, e.target.files[0])}
-                          />
-                          {uploadProgress[berkas.key] && (
-                            <div className="progress mt-2" style={{ height: '6px' }}>
-                              <div 
-                                className="progress-bar" 
-                                style={{ width: `${uploadProgress[berkas.key]}%` }}
-                              ></div>
-                            </div>
-                          )}
-                          <small className="text-muted">Format: PDF, JPG, PNG (max 5MB)</small>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -840,13 +664,13 @@ export default function ConfirmSantriPage() {
                     Pastikan semua data telah diisi dengan benar sebelum menyimpan.
                   </div>
                   <div>
-                    <Link href="/admin/pendaftar" className="btn btn-outline-secondary me-3">
+                    <Link href="/admin/santri" className="btn btn-outline-secondary me-3">
                       <i className="bi bi-arrow-left me-2"></i>
                       Batal
                     </Link>
                     <button 
                       type="submit" 
-                      className="btn btn-success" 
+                      className="btn btn-primary" 
                       disabled={submitting}
                     >
                       {submitting ? (
@@ -858,8 +682,8 @@ export default function ConfirmSantriPage() {
                         </>
                       ) : (
                         <>
-                          <i className="bi bi-check-circle me-2"></i>
-                          Konfirmasi Santri
+                          <i className="bi bi-save me-2"></i>
+                          Simpan Perubahan
                         </>
                       )}
                     </button>

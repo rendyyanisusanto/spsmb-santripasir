@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_id } = body
+    const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_id, sekolah_asal } = body
 
     // Validasi input
     if (!nama || !jenis_kelamin || !no_hp || !nama_wali || !alamat || !lembaga_id) {
@@ -52,6 +52,7 @@ export async function POST(request) {
       no_hp: no_hp.trim(),
       nama_wali: nama_wali.trim(),
       alamat: alamat.trim(),
+      sekolah_asal: sekolah_asal?.trim?.() || null,
       lembaga_id,
       lembaga_pendidikan: lembaga.nama // Keep this for backward compatibility
     })
@@ -65,6 +66,7 @@ export async function POST(request) {
           no_hp: no_hp.trim(),
           nama_wali: nama_wali.trim(),
           alamat: alamat.trim(),
+          sekolah_asal: sekolah_asal?.trim?.() || null,
           lembaga_id: lembaga_id,
           lembaga_pendidikan: lembaga.nama, // Store lembaga name for backward compatibility
           created_by: null // Public registration, no user context

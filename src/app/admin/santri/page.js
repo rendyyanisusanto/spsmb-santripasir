@@ -124,6 +124,39 @@ export default function SantriPage() {
     }
   }
 
+  const handleDelete = async (santriId, santriName) => {
+    if (!confirm(`PERHATIAN: Apakah Anda yakin ingin menghapus santri "${santriName}"?\n\nTindakan ini akan menghapus:\n- Data santri\n- Semua dokumen santri\n- Riwayat terkait\n\nData yang dihapus TIDAK DAPAT dikembalikan!`)) {
+      return
+    }
+
+    // Double confirmation
+    if (!confirm(`Konfirmasi terakhir: Hapus "${santriName}" secara permanen?`)) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      
+      const response = await fetch(`/api/admin/santri/${santriId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        alert(`Santri ${santriName} berhasil dihapus`)
+        fetchSantri()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Gagal menghapus santri')
+      }
+    } catch (error) {
+      console.error('Failed to delete santri:', error)
+      alert('Terjadi kesalahan sistem')
+    }
+  }
+
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -442,6 +475,14 @@ export default function SantriPage() {
                               >
                                 <i className="bi bi-pencil"></i>
                               </Link>
+
+                              <Link
+                                href={`/admin/santri/${data.id}/berkas`}
+                                className="btn btn-outline-success btn-sm"
+                                title="Kelola Dokumen"
+                              >
+                                <i className="bi bi-file-earmark-text"></i>
+                              </Link>
                               
                               {/* Tombol Update Status - hanya untuk superadmin dan admin */}
                               {(user?.role === 'superadmin' || user?.role === 'admin') && (
@@ -458,6 +499,17 @@ export default function SantriPage() {
                                   ) : (
                                     <i className={`bi ${data.status_aktif ? 'bi-pause' : 'bi-play'}`}></i>
                                   )}
+                                </button>
+                              )}
+
+                              {/* Tombol Hapus - hanya untuk superadmin dan admin */}
+                              {(user?.role === 'superadmin' || user?.role === 'admin') && (
+                                <button
+                                  onClick={() => handleDelete(data.id, data.nama_lengkap)}
+                                  className="btn btn-outline-danger btn-sm"
+                                  title="Hapus Santri"
+                                >
+                                  <i className="bi bi-trash"></i>
                                 </button>
                               )}
                               

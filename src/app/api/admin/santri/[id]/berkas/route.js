@@ -48,15 +48,20 @@ export async function GET(request, { params }) {
       .order('created_at', { ascending: false })
 
     if (berkasError) {
+      console.error('Berkas query error:', berkasError)
       return Response.json(
-        { error: 'Gagal memuat data berkas' },
+        { 
+          error: 'Gagal memuat data berkas',
+          details: berkasError.message,
+          code: berkasError.code 
+        },
         { status: 500 }
       )
     }
 
     return Response.json({
       success: true,
-      data: berkas
+      data: berkas || []
     })
 
   } catch (error) {

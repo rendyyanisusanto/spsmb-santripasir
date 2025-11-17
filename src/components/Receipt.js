@@ -74,6 +74,13 @@ export default function Receipt({ registrationData, onNewRegistration }) {
                 <span className={styles.value}>{registrationData.alamat}</span>
               </div>
               
+              {registrationData.sekolah_asal && (
+                <div className={styles.dataRow}>
+                  <span className={styles.label}>Sekolah Asal:</span>
+                  <span className={styles.value}>{registrationData.sekolah_asal}</span>
+                </div>
+              )}
+
               <div className={styles.dataRow}>
                 <span className={styles.label}>Pendidikan:</span>
                 <span className={styles.value}>{registrationData.lembaga_pendidikan}</span>
