@@ -9,13 +9,13 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "SPSMB Asy-Syadzili - Seleksi Penerimaan Santri & Murid Baru",
+  title: "SPSMB Asy-Syadzili - Sistem Penerimaan Santri & Murid Baru",
   description:
-    "Sistem Seleksi Penerimaan Santri dan Murid Baru (SPSMB) Pondok Pesantren Asy-Syadzili. Daftar pondok sekaligus sekolah (SD, SMP, SMA, SMK) secara online, mudah, aman, dan langsung terhubung dengan admin.",
+    "Sistem Penerimaan Santri dan Murid Baru (SPSMB) Pondok Pesantren Asy-Syadzili. Daftar pondok sekaligus sekolah (SD, SMP, SMA, SMK) secara online, mudah, aman, dan langsung terhubung dengan admin.",
   keywords: [
     "SPSMB Asy-Syadzili",
-    "Seleksi Penerimaan Santri Baru",
-    "Seleksi Penerimaan Murid Baru",
+    "Sistem Penerimaan Santri Baru",
+    "Sistem Penerimaan Murid Baru",
     "PPDB Asy-Syadzili",
     "Pendaftaran Pondok Pesantren",
     "Pendaftaran Sekolah Asy-Syadzili",
@@ -25,9 +25,9 @@ export const metadata = {
     "PPDB 2025"
   ],
   openGraph: {
-    title: "SPSMB Asy-Syadzili - Seleksi Santri & Murid Baru",
+    title: "SPSMB Asy-Syadzili - Sistem Santri & Murid Baru",
     description:
-      "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Seleksi santri dan murid baru, proses mudah dan terintegrasi.",
+      "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Sistem santri dan murid baru, proses mudah dan terintegrasi.",
     url: "https://spsmb-santripasir.vercel.app/", // Ganti dengan domain Anda jika sudah custom
     siteName: "SPSMB Asy-Syadzili",
     images: [
@@ -43,9 +43,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SPSMB Asy-Syadzili - Seleksi Santri & Murid Baru",
+    title: "SPSMB Asy-Syadzili - Sistem Santri & Murid Baru",
     description:
-      "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Seleksi santri dan murid baru, proses mudah dan terintegrasi.",
+      "Daftar pondok dan sekolah (SD, SMP, SMA, SMK) di Asy-Syadzili secara online. Sistem santri dan murid baru, proses mudah dan terintegrasi.",
     images: ["/2.png"]
   }
 };
