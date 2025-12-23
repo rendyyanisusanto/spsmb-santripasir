@@ -47,7 +47,7 @@ export async function GET(request) {
     // Pagination
     const from = (page - 1) * limit
     const to = from + limit - 1
-    
+
     query = query
       .order('created_at', { ascending: false })
       .range(from, to)
@@ -193,19 +193,14 @@ export async function POST(request) {
 
 // Function untuk WhatsApp notification (ambil dari route register yang sudah ada)
 async function sendWhatsAppNotification(registrationData) {
-  const botEndpoint = process.env.WHATSAPP_BOT_ENDPOINT
+  const botEndpoint = process.env.WHATSAPP_BOT_ENDPOINT || 'https://wa.simsmk.sch.id'
   let adminNumber = '085894632505' // Default admin
-  
+
   // Tentukan adminNumber berdasarkan lembaga_pendidikan
   if (registrationData.lembaga_pendidikan === 'SMP') {
     adminNumber = '081345009686'
   } else if (registrationData.lembaga_pendidikan === 'SMA') {
     adminNumber = '085179711916'
-  }
-  
-  if (!botEndpoint) {
-    console.warn('WhatsApp bot endpoint not configured')
-    return { success: false, message: 'Bot endpoint not configured' }
   }
 
   try {
@@ -249,39 +244,71 @@ _ID Pendaftaran: ${String(registrationData.id).slice(0, 8).toUpperCase()}_
 
 _Sistem Pendaftaran Asy-Syadzili_`
 
-    const userFormattedPhone = formatNomorHP(registrationData.no_hp)
-    const adminFormattedPhone = formatNomorHP(adminNumber)
+    // Format nomor HP ke format WhatsApp
+    const userFormattedPhone = formatWhatsAppPhone(registrationData.no_hp)
+    const adminFormattedPhone = formatWhatsAppPhone(adminNumber)
 
-    const fullEndpoint = `${botEndpoint.replace(/\/$/, '')}/send-message`
+    const fullEndpoint = `${botEndpoint.replace(/\/$/, '')}/send/message`
+
+    // Basic auth credentials
+    const authHeader = 'Basic ' + Buffer.from('admin:admin').toString('base64')
 
     // Kirim ke pendaftar dan admin
-    const userFormData = new URLSearchParams()
-    userFormData.append('message', messageForUser)
-    userFormData.append('number', userFormattedPhone)
-
-    const adminFormData = new URLSearchParams()
-    adminFormData.append('message', messageForAdmin)
-    adminFormData.append('number', adminFormattedPhone)
-
     const [userResponse, adminResponse] = await Promise.all([
       fetch(fullEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: userFormData.toString(),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify({
+          phone: userFormattedPhone,
+          message: messageForUser,
+          is_forwarded: false
+        }),
         signal: AbortSignal.timeout(10000)
       }),
       fetch(fullEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: adminFormData.toString(),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify({
+          phone: adminFormattedPhone,
+          message: messageForAdmin,
+          is_forwarded: false
+        }),
         signal: AbortSignal.timeout(10000)
       })
     ])
 
-    return {
+    const results = {
       user: { success: userResponse.ok },
       admin: { success: adminResponse.ok }
     }
+
+    if (userResponse.ok) {
+      const userResult = await userResponse.json()
+      results.user.data = userResult
+      console.log('WhatsApp notification sent to user successfully:', userResult)
+    } else {
+      const userError = await userResponse.text()
+      console.error('Failed to send WhatsApp to user:', userResponse.status, userError)
+      results.user.error = userError
+    }
+
+    if (adminResponse.ok) {
+      const adminResult = await adminResponse.json()
+      results.admin.data = adminResult
+      console.log('WhatsApp notification sent to admin successfully:', adminResult)
+    } else {
+      const adminError = await adminResponse.text()
+      console.error('Failed to send WhatsApp to admin:', adminResponse.status, adminError)
+      results.admin.error = adminError
+    }
+
+    return results
 
   } catch (error) {
     console.error('Failed to send WhatsApp notifications:', error.message)
@@ -289,12 +316,24 @@ _Sistem Pendaftaran Asy-Syadzili_`
   }
 }
 
-function formatNomorHP(nomor) {
+function formatWhatsAppPhone(nomor) {
+  // Hapus spasi atau tanda minus (-) yang mungkin dimasukkan oleh pengguna
   nomor = nomor.replace(/[\s\-\(\)]/g, '')
+
+  // Jika nomor diawali dengan "08", ubah menjadi "628"
   if (nomor.startsWith('08')) {
     nomor = '628' + nomor.substring(2)
-  } else if (nomor.startsWith('+62')) {
+  }
+  // Jika nomor diawali dengan "+62", ubah menjadi "62"
+  else if (nomor.startsWith('+62')) {
     nomor = '62' + nomor.substring(3)
   }
-  return nomor
+  // Jika sudah diawali "62", biarkan saja
+  else if (!nomor.startsWith('62')) {
+    // Jika tidak ada prefix, tambahkan 62
+    nomor = '62' + nomor
+  }
+
+  // Tambahkan suffix WhatsApp
+  return `${nomor}@s.whatsapp.net`
 }

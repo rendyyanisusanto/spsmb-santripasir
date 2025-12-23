@@ -15,6 +15,7 @@ export default function PendaftarPage() {
   const [error, setError] = useState('')
   const [santriStatus, setSantriStatus] = useState({}) // Track santri status for each pendaftar
   const [confirmingIds, setConfirmingIds] = useState(new Set()) // Track confirming process
+  const [sendingWhatsApp, setSendingWhatsApp] = useState({}) // Track WhatsApp sending status
   const [filters, setFilters] = useState({
     search: '',
     lembaga: '',
@@ -32,7 +33,7 @@ export default function PendaftarPage() {
     try {
       setLoading(true)
       const token = localStorage.getItem('token')
-      
+
       const searchParams = new URLSearchParams()
       Object.entries(filters).forEach(([key, value]) => {
         if (value) searchParams.set(key, value)
@@ -49,7 +50,7 @@ export default function PendaftarPage() {
         setPendaftar(data.data)
         setPagination(data.pagination)
         setError('')
-        
+
         // Fetch santri status for each pendaftar
         await fetchSantriStatus(data.data)
       } else {
@@ -144,6 +145,37 @@ export default function PendaftarPage() {
     router.push(`/admin/pendaftar/${pendaftarId}/confirm-santri`)
   }
 
+  const handleSendWhatsApp = async (pendaftarId, pendaftarName) => {
+    if (!confirm(`Kirim konfirmasi WhatsApp ke "${pendaftarName}"?`)) {
+      return
+    }
+
+    setSendingWhatsApp(prev => ({ ...prev, [pendaftarId]: true }))
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/pendaftar/${pendaftarId}/send-whatsapp`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        alert('WhatsApp berhasil dikirim!')
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Gagal mengirim WhatsApp')
+      }
+    } catch (error) {
+      console.error('Failed to send WhatsApp:', error)
+      alert('Terjadi kesalahan sistem')
+    } finally {
+      setSendingWhatsApp(prev => ({ ...prev, [pendaftarId]: false }))
+    }
+  }
+
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -156,7 +188,7 @@ export default function PendaftarPage() {
   const getLembagaBadgeClass = (lembaga) => {
     const classes = {
       'SMP': 'bg-primary',
-      'SMA': 'bg-success', 
+      'SMA': 'bg-success',
       'SMK': 'bg-warning',
       'SD': 'bg-info',
       'Non Formal': 'bg-secondary'
@@ -187,15 +219,15 @@ export default function PendaftarPage() {
     const pages = []
     const current = pagination.page
     const total = pagination.totalPages
-    
+
     if (total > 0) pages.push(1)
-    
+
     for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
       if (!pages.includes(i)) pages.push(i)
     }
-    
+
     if (total > 1 && !pages.includes(total)) pages.push(total)
-    
+
     return pages
   }
 
@@ -295,7 +327,7 @@ export default function PendaftarPage() {
                     <div>
                       <h6 className="card-title opacity-75">Tingkat Konfirmasi</h6>
                       <h2 className="mb-0">
-                        {pagination.total > 0 
+                        {pagination.total > 0
                           ? Math.round((Object.values(santriStatus).filter(s => s.isConfirmed).length / pagination.total) * 100)
                           : 0
                         }%
@@ -327,7 +359,7 @@ export default function PendaftarPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="col-md-2">
                   <label className="form-label text-muted fw-semibold">Lembaga</label>
                   <select
@@ -343,7 +375,7 @@ export default function PendaftarPage() {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="col-md-2">
                   <label className="form-label text-muted fw-semibold">Per Halaman</label>
                   <select
@@ -357,7 +389,7 @@ export default function PendaftarPage() {
                     <option value={50}>50</option>
                   </select>
                 </div>
-                
+
                 <div className="col-md-2 d-flex align-items-end">
                   <button
                     onClick={clearFilters}
@@ -450,7 +482,7 @@ export default function PendaftarPage() {
                           <td className="border-0 py-3">
                             <div className="d-flex align-items-center">
                               <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-                                   style={{ width: '40px', height: '40px' }}>
+                                style={{ width: '40px', height: '40px' }}>
                                 <span className="text-white fw-bold" style={{ fontSize: '0.8rem' }}>
                                   {getInitials(data.nama)}
                                 </span>
@@ -507,9 +539,21 @@ export default function PendaftarPage() {
                               >
                                 <i className="bi bi-eye"></i>
                               </Link>
-                              
 
-                              
+                              {/* Tombol WhatsApp */}
+                              <button
+                                onClick={() => handleSendWhatsApp(data.id, data.nama)}
+                                className="btn btn-outline-success btn-sm"
+                                title="Kirim WhatsApp"
+                                disabled={sendingWhatsApp[data.id]}
+                              >
+                                {sendingWhatsApp[data.id] ? (
+                                  <i className="bi bi-hourglass-split"></i>
+                                ) : (
+                                  <i className="bi bi-whatsapp"></i>
+                                )}
+                              </button>
+
                               {/* Tombol Konfirmasi Santri - untuk superadmin, admin, dan lembaga */}
                               {!santriStatus[data.id]?.isConfirmed && (
                                 <button
@@ -520,7 +564,7 @@ export default function PendaftarPage() {
                                   <i className="bi bi-person-check"></i>
                                 </button>
                               )}
-                              
+
                               {/* Link ke halaman santri jika sudah dikonfirmasi */}
                               {santriStatus[data.id]?.isConfirmed && (
                                 <Link
@@ -531,7 +575,7 @@ export default function PendaftarPage() {
                                   <i className="bi bi-person-badge"></i>
                                 </Link>
                               )}
-                              
+
                               {!santriStatus[data.id]?.isConfirmed && (
                                 <button
                                   onClick={() => handleDeletePendaftar(data.id, data.nama)}
@@ -558,7 +602,7 @@ export default function PendaftarPage() {
                   <div className="text-muted">
                     Menampilkan {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total} pendaftar
                   </div>
-                  
+
                   <nav aria-label="Pagination Navigation">
                     <ul className="pagination pagination-sm mb-0">
                       <li className={`page-item ${pagination.page <= 1 ? 'disabled' : ''}`}>
@@ -571,7 +615,7 @@ export default function PendaftarPage() {
                           <span className="d-none d-sm-inline ms-1">Previous</span>
                         </button>
                       </li>
-                      
+
                       {generatePageNumbers().map(pageNum => (
                         <li key={pageNum} className={`page-item ${pagination.page === pageNum ? 'active' : ''}`}>
                           <button
@@ -582,7 +626,7 @@ export default function PendaftarPage() {
                           </button>
                         </li>
                       ))}
-                      
+
                       <li className={`page-item ${pagination.page >= pagination.totalPages ? 'disabled' : ''}`}>
                         <button
                           className="page-link"
