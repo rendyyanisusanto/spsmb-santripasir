@@ -107,7 +107,7 @@ export default function PendaftarPage() {
   const clearFilters = () => {
     setFilters({
       search: '',
-      lembaga: user?.role === 'lembaga' ? user.lembaga_akses : '',
+      lembaga: user?.role === 'lembaga' ? user.lembaga_name : '',
       page: 1,
       limit: 10
     })
@@ -234,7 +234,7 @@ export default function PendaftarPage() {
   // Available lembaga options based on user role
   const getLembagaOptions = () => {
     if (user?.role === 'lembaga') {
-      return [{ value: user.lembaga_akses, label: user.lembaga_akses }]
+      return [{ value: user.lembaga_name, label: user.lembaga_name }]
     }
     return [
       { value: '', label: 'Semua Lembaga' },
@@ -249,7 +249,7 @@ export default function PendaftarPage() {
   // Set default lembaga filter for lembaga users
   useEffect(() => {
     if (user?.role === 'lembaga' && !filters.lembaga) {
-      setFilters(prev => ({ ...prev, lembaga: user.lembaga_akses }))
+      setFilters(prev => ({ ...prev, lembaga: user.lembaga_name }))
     }
   }, [user, filters.lembaga])
 

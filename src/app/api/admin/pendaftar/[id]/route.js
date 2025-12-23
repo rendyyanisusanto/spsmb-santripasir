@@ -18,6 +18,15 @@ export async function GET(request, { params }) {
 
     const pendaftarId = params.id
 
+    // Debug logging
+    console.log('Debug - GET pendaftar by ID:', {
+      pendaftarId,
+      userRole: authResult.user.role,
+      userId: authResult.user.id,
+      userLembagaId: authResult.user.lembaga_id,
+      fullUser: authResult.user
+    })
+
     let query = supabase
       .from('pendaftar')
       .select('*')
@@ -25,6 +34,7 @@ export async function GET(request, { params }) {
 
     // Filter berdasarkan role lembaga
     if (authResult.user.role === 'lembaga') {
+      console.log('Applying lembaga filter with lembaga_id:', authResult.user.lembaga_id)
       // User lembaga hanya bisa akses data dari lembaganya
       if (authResult.user.lembaga_id) {
         query = query.eq('lembaga_id', authResult.user.lembaga_id)

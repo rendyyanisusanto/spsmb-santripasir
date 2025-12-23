@@ -50,7 +50,7 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
     }
   ]
 
-  const visibleMenuItems = menuItems.filter(item => 
+  const visibleMenuItems = menuItems.filter(item =>
     item.roles.includes(user?.role)
   )
 
@@ -69,19 +69,19 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
   return (
     <ProtectedRoute allowedRoles={['superadmin', 'admin', 'lembaga']}>
       {/* Bootstrap 5 CSS */}
-      <link 
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" 
-        rel="stylesheet" 
+      <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
       />
-      <link 
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" 
-        rel="stylesheet" 
+      <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+        rel="stylesheet"
       />
 
       <div className="d-flex vh-100 overflow-hidden">
         {/* Sidebar Overlay for Mobile */}
         {sidebarVisible && (
-          <div 
+          <div
             className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-lg-none"
             style={{ zIndex: 1040 }}
             onClick={closeSidebar}
@@ -89,16 +89,16 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
         )}
 
         {/* Sidebar */}
-        <nav 
+        <nav
           className="text-white h-100 d-flex flex-column sidebar-nav"
         >
           {/* Sidebar Header */}
           <div className="p-4" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <div className="d-flex align-items-center">
-              <div 
-                className="rounded-3 d-flex align-items-center justify-content-center me-3" 
-                style={{ 
-                  width: '48px', 
+              <div
+                className="rounded-3 d-flex align-items-center justify-content-center me-3"
+                style={{
+                  width: '48px',
                   height: '48px',
                   background: 'rgba(245, 241, 227, 0.9)',
                   color: '#1A4D2E'
@@ -117,8 +117,8 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
           <div className="flex-grow-1 p-3">
             <ul className="nav nav-pills flex-column">
               <li className="nav-item mb-1">
-                <small className="text-uppercase fw-bold px-3 py-2 d-block" 
-                       style={{ fontSize: '0.75rem', color: 'rgba(245, 241, 227, 0.6)' }}>
+                <small className="text-uppercase fw-bold px-3 py-2 d-block"
+                  style={{ fontSize: '0.75rem', color: 'rgba(245, 241, 227, 0.6)' }}>
                   MENU UTAMA
                 </small>
               </li>
@@ -126,20 +126,19 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
                 <li key={item.href} className="nav-item mb-1">
                   <Link
                     href={item.href}
-                    className={`nav-link d-flex align-items-center rounded-3 px-3 py-2 ${
-                      pathname === item.href 
-                        ? 'active text-white' 
+                    className={`nav-link d-flex align-items-center rounded-3 px-3 py-2 ${pathname === item.href
+                        ? 'active text-white'
                         : 'text-light'
-                    }`}
+                      }`}
                     onClick={closeSidebar}
                     style={{
                       transition: 'all 0.2s ease',
                       textDecoration: 'none',
-                      backgroundColor: pathname === item.href 
-                        ? 'rgba(245, 241, 227, 0.15)' 
+                      backgroundColor: pathname === item.href
+                        ? 'rgba(245, 241, 227, 0.15)'
                         : 'transparent',
-                      border: pathname === item.href 
-                        ? '1px solid rgba(245, 241, 227, 0.3)' 
+                      border: pathname === item.href
+                        ? '1px solid rgba(245, 241, 227, 0.3)'
                         : '1px solid transparent'
                     }}
                     onMouseEnter={(e) => {
@@ -165,13 +164,13 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
 
           {/* User Info & Logout */}
           <div className="p-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <div className="rounded-3 p-3 mb-3" 
-                 style={{ backgroundColor: 'rgba(245, 241, 227, 0.1)', border: '1px solid rgba(245, 241, 227, 0.2)' }}>
+            <div className="rounded-3 p-3 mb-3"
+              style={{ backgroundColor: 'rgba(245, 241, 227, 0.1)', border: '1px solid rgba(245, 241, 227, 0.2)' }}>
               <div className="d-flex align-items-center mb-2">
-                <div 
-                  className="rounded-circle d-flex align-items-center justify-content-center me-2" 
-                  style={{ 
-                    width: '32px', 
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center me-2"
+                  style={{
+                    width: '32px',
                     height: '32px',
                     background: 'rgba(245, 241, 227, 0.9)',
                     color: '#1A4D2E'
@@ -191,17 +190,17 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
                 </div>
               </div>
               {user?.lembaga_akses && (
-                <div 
+                <div
                   className="rounded-2 px-2 py-1 text-center"
                   style={{ backgroundColor: 'rgba(245, 241, 227, 0.15)', border: '1px solid rgba(245, 241, 227, 0.3)' }}
                 >
                   <small style={{ fontSize: '0.7rem', color: 'rgba(245, 241, 227, 0.8)' }}>
-                    Lembaga: {user.lembaga_akses}
+                    Lembaga: {user.lembaga_name}
                   </small>
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={handleLogout}
               className="btn w-100 d-flex align-items-center justify-content-center"
@@ -227,7 +226,7 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
         </nav>
 
         {/* Main Content */}
-        <main 
+        <main
           className="flex-grow-1 d-flex flex-column main-content"
         >
           {/* Top Header */}
@@ -240,7 +239,7 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
                 >
                   <i className="bi bi-list"></i>
                 </button>
-                
+
                 <div>
                   <h4 className="mb-0 fw-bold text-dark">{pageTitle}</h4>
                   <small className="text-muted">
@@ -266,11 +265,11 @@ export default function AdminLayout({ children, pageTitle = 'Dashboard' }) {
       </div>
 
       {/* Bootstrap 5 JS */}
-      <script 
+      <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         async
       ></script>
-      
+
       <style jsx>{`
         .start-n100 {
           left: -280px;

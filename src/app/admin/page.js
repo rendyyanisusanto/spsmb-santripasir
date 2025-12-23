@@ -24,7 +24,7 @@ export default function AdminDashboard() {
       try {
         setLoading(true)
         const token = localStorage.getItem('token')
-        
+
         // Fetch pendaftar data
         const pendaftarResponse = await fetch('/api/admin/pendaftar?limit=5', {
           headers: {
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
         if (pendaftarResponse.ok) {
           const pendaftarData = await pendaftarResponse.json()
           setRecentPendaftar(pendaftarData.data)
-          
+
           // Calculate stats
           calculateStats(pendaftarData.data, pendaftarData.pagination.total)
         }
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
 
   const calculateStats = (pendaftarList, totalCount) => {
     const today = new Date().toDateString()
-    const todayCount = pendaftarList.filter(p => 
+    const todayCount = pendaftarList.filter(p =>
       new Date(p.created_at).toDateString() === today
     ).length
 
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   const getRoleDisplayName = (role) => {
     const roles = {
       'superadmin': 'Super Administrator',
-      'admin': 'Administrator', 
+      'admin': 'Administrator',
       'lembaga': 'Admin Lembaga'
     }
     return roles[role] || role
@@ -143,8 +143,8 @@ export default function AdminDashboard() {
             value={loading ? '...' : stats.totalPendaftar.toLocaleString()}
             icon="bi-people"
             color="primary"
-            description={user?.role === 'lembaga' 
-              ? `Pendaftar ${user.lembaga_akses}` 
+            description={user?.role === 'lembaga'
+              ? `Pendaftar ${user.lembaga_name}`
               : 'Semua lembaga'
             }
           />
@@ -176,14 +176,14 @@ export default function AdminDashboard() {
 
         <div className="col-xl-3 col-lg-6 col-md-6">
           <StatsCard
-            title={user?.role === 'lembaga' ? user.lembaga_akses : 'Status Sistem'}
-            value={user?.role === 'lembaga' 
-              ? (loading ? '...' : (stats.pendaftarByLembaga[user.lembaga_akses] || 0).toLocaleString())
+            title={user?.role === 'lembaga' ? user.lembaga_name : 'Status Sistem'}
+            value={user?.role === 'lembaga'
+              ? (loading ? '...' : (stats.pendaftarByLembaga[user.lembaga_name] || 0).toLocaleString())
               : 'Online'
             }
             icon="bi-lightning"
             color="warning"
-            description={user?.role === 'lembaga' 
+            description={user?.role === 'lembaga'
               ? 'Pendaftar lembaga Anda'
               : 'Sistem berjalan normal'
             }
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
             <div className="card h-100 border-0 shadow-sm card-hover">
               <div className="card-body d-flex align-items-center">
                 <div className="bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3"
-                     style={{ width: '48px', height: '48px' }}>
+                  style={{ width: '48px', height: '48px' }}>
                   <i className="bi bi-file-text text-primary fs-4"></i>
                 </div>
                 <div>
@@ -218,7 +218,7 @@ export default function AdminDashboard() {
               <div className="card h-100 border-0 shadow-sm card-hover">
                 <div className="card-body d-flex align-items-center">
                   <div className="bg-success bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3"
-                       style={{ width: '48px', height: '48px' }}>
+                    style={{ width: '48px', height: '48px' }}>
                     <i className="bi bi-people text-success fs-4"></i>
                   </div>
                   <div>
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
             <div className="card h-100 border-0 shadow-sm card-hover">
               <div className="card-body d-flex align-items-center">
                 <div className="bg-info bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3"
-                     style={{ width: '48px', height: '48px' }}>
+                  style={{ width: '48px', height: '48px' }}>
                   <i className="bi bi-bar-chart text-info fs-4"></i>
                 </div>
                 <div>
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
                       <td className="border-0 py-3">
                         <div className="d-flex align-items-center">
                           <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-                               style={{ width: '40px', height: '40px' }}>
+                            style={{ width: '40px', height: '40px' }}>
                             <span className="text-white fw-bold" style={{ fontSize: '0.8rem' }}>
                               {getInitials(pendaftar.nama)}
                             </span>
@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                         {formatDate(pendaftar.created_at)}
                       </td>
                       <td className="border-0 py-3">
-                        <Link 
+                        <Link
                           href={`/admin/pendaftar/${pendaftar.id}`}
                           className="btn btn-outline-primary btn-sm"
                         >

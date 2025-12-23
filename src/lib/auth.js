@@ -29,11 +29,12 @@ export function generateToken(user) {
     username: user.username,
     email: user.email,
     role: user.role,
-    lembaga_akses: user.lembaga_akses,
+    lembaga_id: user.lembaga_id,
+    lembaga_name: user.lembaga_name || null,
     full_name: user.full_name
   }
-  
-  return jwt.sign(payload, JWT_SECRET, { 
+
+  return jwt.sign(payload, JWT_SECRET, {
     expiresIn: '24h' // Token berlaku 24 jam
   })
 }
@@ -61,7 +62,7 @@ export async function authenticate(request) {
 
     const token = authHeader.substring(7) // Remove 'Bearer ' prefix
     const decoded = verifyToken(token)
-    
+
     if (!decoded) {
       return { error: 'Token tidak valid', status: 401 }
     }
@@ -89,7 +90,7 @@ export async function authenticate(request) {
  * Middleware untuk authorization berdasarkan role
  */
 export function authorize(allowedRoles = []) {
-  return async function(request, user) {
+  return async function (request, user) {
     if (!user) {
       return { error: 'User tidak terautentikasi', status: 401 }
     }
@@ -110,12 +111,12 @@ export function canAccessLembaga(user, lembaga) {
   if (user.role === 'superadmin' || user.role === 'admin') {
     return true
   }
-  
+
   // User lembaga hanya bisa akses lembaganya sendiri
   if (user.role === 'lembaga') {
     return user.lembaga_akses === lembaga
   }
-  
+
   return false
 }
 
@@ -125,7 +126,10 @@ export function canAccessLembaga(user, lembaga) {
 export async function getUserByCredential(credential) {
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select(`
+      *,
+      lembaga:lembaga_id(id, nama)
+    `)
     .or(`username.eq.${credential},email.eq.${credential}`)
     .eq('is_active', true)
     .single()
@@ -134,7 +138,13 @@ export async function getUserByCredential(credential) {
     return { error }
   }
 
-  return { user: data }
+  // Flatten lembaga data for easier access
+  const user = {
+    ...data,
+    lembaga_name: data.lembaga?.nama || null
+  }
+
+  return { user }
 }
 
 /**
