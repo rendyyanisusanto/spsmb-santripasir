@@ -26,7 +26,9 @@ export async function GET(request, { params }) {
     // Filter berdasarkan role lembaga
     if (authResult.user.role === 'lembaga') {
       // User lembaga hanya bisa akses data dari lembaganya
-      query = query.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      if (authResult.user.lembaga_id) {
+        query = query.eq('lembaga_id', authResult.user.lembaga_id)
+      }
     }
 
     const { data: pendaftar, error } = await query.single()
@@ -94,8 +96,14 @@ export async function PUT(request, { params }) {
     }
 
     // Cek akses lembaga untuk role lembaga
-    // Note: lembaga_id in body should map to a lembaga record, but we skip this check for now
-    // since the system is using lembaga_pendidikan (string) not lembaga_id (UUID foreign key)
+    if (authResult.user.role === 'lembaga') {
+      if (authResult.user.lembaga_id && lembaga_id !== authResult.user.lembaga_id) {
+        return Response.json(
+          { error: 'Tidak memiliki akses untuk lembaga ini' },
+          { status: 403 }
+        )
+      }
+    }
 
     // Validasi jenis kelamin
     const validJenisKelamin = ['Pria', 'Wanita']
@@ -118,11 +126,13 @@ export async function PUT(request, { params }) {
     // Cek apakah data pendaftar ada dan user memiliki akses
     let checkQuery = supabase
       .from('pendaftar')
-      .select('lembaga_pendidikan')
+      .select('lembaga_id')
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      checkQuery = checkQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      if (authResult.user.lembaga_id) {
+        checkQuery = checkQuery.eq('lembaga_id', authResult.user.lembaga_id)
+      }
     }
 
     const { data: existingData, error: checkError } = await checkQuery.single()
@@ -149,7 +159,9 @@ export async function PUT(request, { params }) {
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      updateQuery = updateQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      if (authResult.user.lembaga_id) {
+        updateQuery = updateQuery.eq('lembaga_id', authResult.user.lembaga_id)
+      }
     }
 
     const { data, error } = await updateQuery.select()
@@ -204,11 +216,13 @@ export async function DELETE(request, { params }) {
     // Cek apakah data pendaftar ada dan user memiliki akses
     let checkQuery = supabase
       .from('pendaftar')
-      .select('nama, lembaga_pendidikan')
+      .select('nama, lembaga_id')
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      checkQuery = checkQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      if (authResult.user.lembaga_id) {
+        checkQuery = checkQuery.eq('lembaga_id', authResult.user.lembaga_id)
+      }
     }
 
     const { data: existingData, error: checkError } = await checkQuery.single()
@@ -227,7 +241,9 @@ export async function DELETE(request, { params }) {
       .eq('id', pendaftarId)
 
     if (authResult.user.role === 'lembaga') {
-      deleteQuery = deleteQuery.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      if (authResult.user.lembaga_id) {
+        deleteQuery = deleteQuery.eq('lembaga_id', authResult.user.lembaga_id)
+      }
     }
 
     const { error } = await deleteQuery

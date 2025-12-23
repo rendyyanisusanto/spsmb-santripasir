@@ -30,9 +30,13 @@ export async function GET(request) {
     // Filter berdasarkan role
     if (authResult.user.role === 'lembaga') {
       // User lembaga hanya bisa lihat data pendaftar dari lembaganya
-      query = query.eq('lembaga_pendidikan', authResult.user.lembaga_akses)
+      // Filter by lembaga_id (UUID foreign key to lembaga table)
+      if (authResult.user.lembaga_id) {
+        query = query.eq('lembaga_id', authResult.user.lembaga_id)
+      }
     } else if (lembaga) {
-      // Superadmin dan admin bisa filter by lembaga_pendidikan
+      // Superadmin dan admin bisa filter by lembaga (parameter bisa berupa string nama atau UUID)
+      // Try filtering by lembaga_pendidikan (string like 'SMP', 'SMA')
       query = query.eq('lembaga_pendidikan', lembaga)
     }
 

@@ -34,7 +34,7 @@ export async function POST(request, { params }) {
 
         // Check access for lembaga role
         if (authResult.user.role === 'lembaga') {
-            if (pendaftar.lembaga_pendidikan !== authResult.user.lembaga_akses) {
+            if (authResult.user.lembaga_id && pendaftar.lembaga_id !== authResult.user.lembaga_id) {
                 return Response.json(
                     { error: 'Tidak memiliki akses untuk pendaftar ini' },
                     { status: 403 }

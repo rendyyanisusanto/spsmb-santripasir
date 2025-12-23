@@ -35,8 +35,8 @@ export async function POST(request, { params }) {
 
     // Jika user adalah lembaga, pastikan pendaftar berasal dari lembaga yang sama
     if (authResult.user.role === 'lembaga') {
-      const userLembaga = authResult.user.lembaga_akses
-      if (!userLembaga || pendaftar.lembaga_pendidikan !== userLembaga) {
+      const userLembagaId = authResult.user.lembaga_id
+      if (!userLembagaId || pendaftar.lembaga_id !== userLembagaId) {
         return Response.json({ error: 'Tidak memiliki akses untuk mengonfirmasi pendaftar ini' }, { status: 403 })
       }
     }
