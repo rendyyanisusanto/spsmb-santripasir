@@ -18,13 +18,18 @@ export async function GET(request, { params }) {
 
     const pendaftarId = params.id
 
-    // Debug logging
-    console.log('Debug - GET pendaftar by ID:', {
-      pendaftarId,
-      userRole: authResult.user.role,
-      userId: authResult.user.id,
-      userLembagaId: authResult.user.lembaga_id,
-      fullUser: authResult.user
+    // ===== DEBUG LOGGING START =====
+    console.log('==========================================')
+    console.log('GET PENDAFTAR BY ID - START')
+    console.log('==========================================')
+    console.log('1. Request params:', { pendaftarId, rawParams: params })
+    console.log('2. Auth user:', {
+      id: authResult.user.id,
+      username: authResult.user.username,
+      role: authResult.user.role,
+      lembaga_id: authResult.user.lembaga_id,
+      lembaga_name: authResult.user.lembaga_name,
+      fullUser: JSON.stringify(authResult.user)
     })
 
     let query = supabase
@@ -32,18 +37,49 @@ export async function GET(request, { params }) {
       .select('*')
       .eq('id', pendaftarId)
 
+    console.log('3. Base query built for pendaftar:', pendaftarId)
+
     // Filter berdasarkan role lembaga
     if (authResult.user.role === 'lembaga') {
-      console.log('Applying lembaga filter with lembaga_id:', authResult.user.lembaga_id)
+      console.log('4. User is LEMBAGA role - applying filter')
+      console.log('   lembaga_id from user:', authResult.user.lembaga_id)
       // User lembaga hanya bisa akses data dari lembaganya
       if (authResult.user.lembaga_id) {
         query = query.eq('lembaga_id', authResult.user.lembaga_id)
+        console.log('   Filter applied: lembaga_id =', authResult.user.lembaga_id)
+      } else {
+        console.log('   WARNING: lembaga_id is NULL/undefined - no filter applied!')
       }
+    } else {
+      console.log('4. User role is:', authResult.user.role, '- NO lembaga filter')
     }
 
+    console.log('5. Executing Supabase query...')
     const { data: pendaftar, error } = await query.single()
 
+    console.log('6. Supabase query result:', {
+      success: !error,
+      hasData: !!pendaftar,
+      error: error ? {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      } : null,
+      data: pendaftar ? {
+        id: pendaftar.id,
+        nama: pendaftar.nama,
+        lembaga_id: pendaftar.lembaga_id,
+        lembaga_pendidikan: pendaftar.lembaga_pendidikan
+      } : null
+    })
+    console.log('==========================================')
+    console.log('GET PENDAFTAR BY ID - END')
+    console.log('==========================================')
+    // ===== DEBUG LOGGING END =====
+
     if (error || !pendaftar) {
+      console.error('RETURNING 404 - Pendaftar not found')
       return Response.json(
         { error: 'Data pendaftar tidak ditemukan' },
         { status: 404 }
