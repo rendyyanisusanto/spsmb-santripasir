@@ -89,7 +89,7 @@ export default function RegistrationForm({ onSuccess }) {
 
       // Call onSuccess callback with registration data
       onSuccess(result.data)
-      
+
       // Reset form
       setFormData({
         nama: '',
@@ -116,12 +116,12 @@ export default function RegistrationForm({ onSuccess }) {
           <div className={styles.header}>
             <h1 className={styles.mainTitle}>Seleksi Penerimaan Santri dan Murid Baru (SPSMB) Asy-Syadzili</h1>
             <div className={styles.logoContainer}>
-              <Image 
-                src="/1.png" 
-                alt="Logo Asy-Syadzili" 
-                width={180} 
-                height={180} 
-                className={styles.logo} 
+              <Image
+                src="/1.png"
+                alt="Logo Asy-Syadzili"
+                width={180}
+                height={180}
+                className={styles.logo}
                 priority
               />
             </div>
@@ -152,9 +152,9 @@ export default function RegistrationForm({ onSuccess }) {
                   <li>Admin akan menghubungi nomor yang terdaftar untuk data lanjutan</li>
                   <li>Apabila terkendala silahkan hubungi admin melalui live chat</li>
                 </ol>
-                
+
                 <div className={styles.stepActions}>
-                  <button 
+                  <button
                     onClick={() => setCurrentStep(2)}
                     className={styles.nextButton}
                   >
@@ -281,7 +281,7 @@ export default function RegistrationForm({ onSuccess }) {
 
                   <div className={styles.inputGroup}>
                     <label htmlFor="lembaga_id" className={styles.label}>
-                      Lembaga Pendidikan
+                      Lembaga Pendidikan yang dipilih
                     </label>
                     <select
                       id="lembaga_id"
