@@ -35,9 +35,8 @@ export async function POST(request, { params }) {
 
     // Jika user adalah lembaga, pastikan pendaftar berasal dari lembaga yang sama
     if (authResult.user.role === 'lembaga') {
-      // depending on token payload the lembaga identifier may be in `lembaga_akses` or `lembaga_id`
-      const userLembaga = authResult.user.lembaga_id || authResult.user.lembaga_akses
-      if (!userLembaga || pendaftar.lembaga_id !== userLembaga) {
+      const userLembaga = authResult.user.lembaga_akses
+      if (!userLembaga || pendaftar.lembaga_pendidikan !== userLembaga) {
         return Response.json({ error: 'Tidak memiliki akses untuk mengonfirmasi pendaftar ini' }, { status: 403 })
       }
     }
@@ -66,8 +65,8 @@ export async function POST(request, { params }) {
 
       for (const field of requiredFields) {
         if (!santri_data[field]) {
-          return Response.json({ 
-            error: `Field ${field.replace('_', ' ')} harus diisi` 
+          return Response.json({
+            error: `Field ${field.replace('_', ' ')} harus diisi`
           }, { status: 400 })
         }
       }
@@ -76,7 +75,6 @@ export async function POST(request, { params }) {
     // Create santri record
     const santriData = santri_data ? {
       pendaftar_id: pendaftar.id,
-      lembaga_id: pendaftar.lembaga_id,
       status_aktif: true,
       ...santri_data
     } : {
@@ -84,7 +82,6 @@ export async function POST(request, { params }) {
       nama_lengkap: pendaftar.nama,
       jenis_kelamin: pendaftar.jenis_kelamin,
       alamat: pendaftar.alamat,
-      lembaga_id: pendaftar.lembaga_id,
       status_aktif: true,
       // Other fields will be filled later through edit form
       tempat_lahir: null,
