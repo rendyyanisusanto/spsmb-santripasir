@@ -16,7 +16,9 @@ export async function GET(request, { params }) {
       return Response.json({ error: authzResult.error }, { status: authzResult.status })
     }
 
-    const pendaftarId = params.id
+    // CRITICAL FIX: await params (Next.js 15 async params)
+    const resolvedParams = await params
+    const pendaftarId = resolvedParams.id
 
     // ===== DEBUG LOGGING START =====
     console.log('==========================================')
@@ -115,7 +117,9 @@ export async function PUT(request, { params }) {
       return Response.json({ error: authzResult.error }, { status: authzResult.status })
     }
 
-    const pendaftarId = params.id
+    // CRITICAL FIX: await params (Next.js 15 async params)
+    const resolvedParams = await params
+    const pendaftarId = resolvedParams.id
     const body = await request.json()
     const { nama, jenis_kelamin, no_hp, nama_wali, alamat, lembaga_id } = body
 
@@ -257,7 +261,9 @@ export async function DELETE(request, { params }) {
       return Response.json({ error: authzResult.error }, { status: authzResult.status })
     }
 
-    const pendaftarId = params.id
+    // CRITICAL FIX: await params (Next.js 15 async params)
+    const resolvedParams = await params
+    const pendaftarId = resolvedParams.id
 
     // Cek apakah data pendaftar ada dan user memiliki akses
     let checkQuery = supabase

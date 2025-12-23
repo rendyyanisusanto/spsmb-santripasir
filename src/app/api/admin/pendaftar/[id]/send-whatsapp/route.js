@@ -16,7 +16,9 @@ export async function POST(request, { params }) {
             return Response.json({ error: authzResult.error }, { status: authzResult.status })
         }
 
-        const pendaftarId = params.id
+        // CRITICAL FIX: await params (Next.js 15 async params)
+        const resolvedParams = await params
+        const pendaftarId = resolvedParams.id
 
         // Fetch pendaftar data
         const { data: pendaftar, error: fetchError } = await supabase
